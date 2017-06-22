@@ -1,0 +1,11 @@
+# https://www.playframework.com/documentation/latest/ScalaI18N
+application.name = Online Trading Platform
+
+orders.list.navigation = List
+orders.new = (new)
+orders.new.command = New
+orders.new.title = New Order
+orders.new.submit = Add
+orders.new.success = Successfully added.
+
+

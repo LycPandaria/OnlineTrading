@@ -1,0 +1,8 @@
+@(orders: Seq[Order])(implicit messages: Messages, flash: Flash)
+
+@main("Welcome to Play") {
+  <h1>Welcome to Play!</h1>
+  @for(order <- orders){
+    <p>@order.price</p>
+  }
+}

@@ -1,0 +1,51 @@
+@(buys: Seq[OrderForm], sells: Seq[OrderForm])(implicit messages: Messages, flash: Flash)
+
+@main(Messages("application.name")){
+    <table class="table table-bordered table-striped">
+        <caption>Buy</caption>
+        <thead>
+            <tr>
+                <th>Trade Type</th>
+                <th>Price</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for(order <- buys){
+                <tr>
+                    <td>@order.tradetype</td>
+                    <td>@order.price</td>
+                    <td>@order.amount</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <table class="table table-bordered table-striped">
+        <caption>Sell</caption>
+        <thead>
+            <tr>
+                <th>Trade Type</th>
+                <th>Price</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+        @for(order <- sells){
+            <tr>
+                <td>@order.tradetype</td>
+                <td>@order.price</td>
+                <td>@order.amount</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <p>
+        <span class="glyphicon glyphicon-plus">
+            <a href="@routes.OrderController.newOrder()" class="btn">
+                @Messages("orders.new.command")
+            </a>
+        </span>
+    </p>
+}

@@ -1,0 +1,29 @@
+@(orderForm: Form[OrderForm])(implicit messages: Messages, flash: Flash)
+
+@main(Messages("orders.new.title")){
+    <h2>@Messages("orders.new.title")</h2>
+
+        <!-- form -->
+    @helper.form(action = routes.OrderController.save()){
+        <fieldset>
+            <legend>
+            @Messages("orders.new")
+            </legend>
+            @helper.select(
+                field = orderForm("tradetype"),
+                options = Seq(
+                    "buy" -> "Buy",
+                    "sell" -> "Sell"
+                ),
+                '_default -> "Choose One",
+                '_disabled -> Seq("FooKey", "BazKey")
+            )
+            @helper.inputText(orderForm("price"))
+            @helper.inputText(orderForm("amount"))
+        </fieldset>
+
+        <p>
+            <input type="submit" class="btn primary" value='@Messages("orders.new.submit")'>
+        </p>
+    }
+}

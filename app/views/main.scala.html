@@ -1,0 +1,67 @@
+@*
+ * This template is called from the `index` template. This template
+ * handles the rendering of the page header and body tags. It takes
+ * two arguments, a `String` for the title of the page and an `Html`
+ * object to insert into the body of the page.
+ *@
+@(title: String)(content: Html)(implicit messages: Messages, flash: Flash)
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        @* Here's where we render the page title `String`. *@
+        <title>@title</title>
+        <link rel="stylesheet" type="text/css" media="screen"
+            href="@routes.Assets.versioned("stylesheets/bootstrap.css")">
+        <link rel="stylesheet" type="text/css" media="screen"
+            href="@routes.Assets.versioned("stylesheets/main.css")">
+
+    </head>
+    <body>
+        @* And here's where we render the `Html` object containing
+         * the page content. *@
+        <div class="screenshot">
+            <div class="navbar navbar-fixed-top">
+                <div class="navbar-inner">
+                    <div class="container">
+                        <a class="brand" href="@routes.HomeController.index()">
+                        @Messages("application.name")
+                        </a>
+                        <ul class="nav">
+                            <li class="divider-vertical"></li>
+                            <li >
+                                <a href="@routes.OrderController.list()">
+                                @Messages("orders.list.navigation")
+                                </a>
+                            </li>
+                            <li class="divider-vertical"></li>
+                            <li >
+                                <a href="@routes.OrderController.newOrder()">
+                                    @Messages("orders.new.command")
+                                </a>
+                            </li>
+                            <li class="divider-vertical"></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container">
+                    <!-- use the flash scope to show one-time messages to the user. -->
+                @if(flash.get("success").isDefined){
+                    <div class="alert alert-success">
+                    @flash.get("success")
+                    </div>
+                }
+                @if(flash.get("error").isDefined){
+                    <div class="alert alert-error">
+                    @flash.get("error")
+                    </div>
+                }
+                @content
+            </div>
+        </div>
+
+      <script src="@routes.Assets.versioned("javascripts/main.js")" type="text/javascript"></script>
+    </body>
+</html>
