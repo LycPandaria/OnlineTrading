@@ -1,1 +1,312 @@
-@()
+@(user: User)(implicit messages: Messages, flash: Flash, session: Session)
+
+@main(Messages("orders.marketorder")){
+    <div class="page">
+        @orders.ordersnavi()
+        <div class="main">
+            <div class="main_title" style="background: none;margin-bottom: 0;">
+                <div>@Messages("orders.marketorder")</div>
+            </div>
+            <div class="trading_box">
+                    <!-- Trade box -->
+                <div style="float: left;width:477px;">
+                    <div class="trading_title" id="con" style="width: 477px;">
+                        <ul id="tags">
+                            <li class="redbg selectTag" data-tag="0"><a href="#" >Buy BTC</a></li>
+                            <li class="greenbg" data-tag="1"><a href="#" class="cur">Sell BTC</a></li>
+                        </ul>
+                    </div>
+                    <div class="buying" id="tagContent0" style="height: 484px;">
+                        <div class="buy_infor" >
+                            <div class="available_momey">
+                                <h3>GBP Balance: <strong>@user.gbpBalance</strong> </h3>
+                                <span><a href="@routes.UserController.gbpTopupPage()">@Messages("topup")</a></span>
+                            </div>
+                            <div class="input-box">
+                                <span>Buy Amount :</span>
+                                <br/>
+                                <input style="text" id="buy_amount" name="amount" value="">
+                            </div>
+                            <div class="input-box">
+                                <span>Estimate Cost:</span>
+                                <br/>
+                                <span id="buy_estimate">0</span>
+                            </div>
+                            <div class="buttonbg">
+                                <input style="width: 445px;" type="submit" id="buy_submit"  value="Buy" class="submit">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="buying" id="tagContent1" style="display:none;height: 484px;">
+                        <div class="buy_infor">
+                            <div class="available_momey">
+                                <h3>BTC Balance : <strong>@user.btcBalance</strong> </h3>
+                                <span><a href="@routes.UserController.btcTopupPage()">@Messages("topup")</a></span>
+                            </div>
+                            <div class="input-box">
+                                <span>Sell Amount :</span>
+                                <br/>
+                                <input style="text" id="sell_amount" value="" name="amount">
+                            </div>
+                            <div class="input-box">
+                                <span>Estimate Earn:</span>
+                                <br/>
+                                <span id="sell_estimate">0</span>
+                            </div>
+                            <div class="buttonbg2">
+                                <input style="width: 445px;" type="submit"  id="sell_submit" value="Sell" class="submit">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    <!-- Current Orders list -->
+                <div class="strike_list" style="float: right;width: 300px;min-height: 535px;border-top: 1px solid #D5D5D5;">
+                    <div class="new_strike">
+                        <div class="strike_title" style="height: 50px;line-height: 50px; font-size:16px;">Last Price : £
+                            <strong id="last_btc">-</strong>
+                        </div>
+                        <div class="list">
+                            <table width="300" border="0" cellpadding="0" cellspacing="0" style="border-bottom: none;background: white;">
+                                <tbody id="salelist">
+                                    <tr>
+                                        <td colspan="3">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="title">
+                            <span class="first">Buy/Sell</span>
+                            <span class="second">Price</span>
+                            <span class="last">Amount</span>
+                        </div>
+                        <table width="300" border="0" cellpadding="0" cellspacing="0" style="border-top: none;background: white;">
+                            <tbody id="buylist">
+                                <tr>
+                                    <td colspan="3">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div style="clear:both;"></div>
+            </div>
+            <div style="clear:both;"></div>
+            <div class="tab_box" style="margin-top: 5px;">
+                <div class="notes_title" id="con">
+                    <ul id="tags1">
+                        <li class="selectTag2" data-tag="0"><a href="javascript:void(0);" >My Orders</a></li>
+                        <li class="" data-tag="1"><a href="javascript:void(0);">Trades History</a></li>
+                    </ul>
+                </div>
+                <div class="box1" id="tagC0" style="font-size:12px;">
+                    <div class="tit">
+                        <span style="width:160px">Create Time</span>
+                        <span style="width:100px">Type</span>
+                        <span style="width:120px">Price</span>
+                        <span style="width:80px">Amount</span>
+                        <span style="width:120px">Outstanding</span>
+                        <span style="width:100px">Status</span>
+                            <!--
+                    <span style="width:50px; text-align:center;">Operation</span>
+                    -->
+                    </div>
+                    <table>
+                        <tbody id="orders">
+
+                        </tbody>
+                    </table>
+                    <div class="pages" style="margin-top:15px;"></div>
+                </div>
+                <div class="box1" id="tagC1" style="font-size:12px; display: none">
+                    <div class="tit">
+                        <span style="width:80px">Trade ID</span>
+                        <span style="width:112px">Time</span>
+                        <span style="width:140px">Trade Type</span>
+                        <span style="width:100px">Trade Price</span>
+                        <span style="width:100px">Trade Amount</span>
+                        <span style="width:150px">Sum</span>
+                    </div>
+                    <table>
+                        <tbody id="trades"></tbody>
+                    </table>
+                    <div class="pages" style="margin-top: 15px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+            $(document).ready(function () {
+                getLastPrice();
+                getTickers();
+                getUserOrders();
+                setInterval(getLastPrice, 2000);
+                setInterval(getTickers, 2000);
+                // Tag Switch
+                $("#tags li").click(function () {
+                    var tag_id = $(this).attr("data-tag");
+                    $("#tags li").removeClass("selectTag");
+                    $(this).addClass("selectTag");
+                    $("#tagContent0").hide();
+                    $("#tagContent1").hide();
+                    $("#tagContent"+tag_id).show();
+                });
+                $("#tags1 li").click(function () {
+                    var tag_id = $(this).attr("data-tag");
+                    $("#tags1 li").removeClass("selectTag2");
+                    $(this).addClass("selectTag2");
+                    $("#tagC0").hide();
+                    $("#tagC1").hide();
+                    $("#tagC"+tag_id).show();
+                    if(tag_id === '0')
+                        getUserOrders();
+                    else
+                        getUserTrades();
+                });
+                $("#buy_amount").on("input propertychange", function () {
+                    var amount = $(this).val();
+                    if(!isNaN(amount)){ // if it a number
+                        getEstimate("buy", amount);
+                    }else {
+                        alert("Please input a number.");
+                        $(this).val("");
+                        $(this).focus();
+                    }
+                });
+                // new buy order checks
+                $(":submit[id=buy_submit]").click(function(check){
+                    var $amount = $("#buy_amount");
+                    var gbpBalance = @user.gbpBalance;
+                    var sum = $("#buy_sum").val();
+                    // get the trade type
+                    if($amount.val() === ""){
+                        alert("Please input a amount.");
+                        $amount.focus();
+                        return false;
+                    }
+                    if(isNaN(sum)){
+                        alert("Sorry, we currently do not have orders to trade.");
+                        return false;
+                    }else if(sum > gbpBalance){
+                        alert("Sorry, not enough GBP balance. You may input a smaller number.")
+                        $amount.focus();
+                        return false;
+                    }
+
+                    window.location.href = "/orders/marketOrder/buy/" + $amount.val()
+                });
+                $("#sell_amount").on("input propertychange", function () {
+                    var amount = $(this).val();
+                    if(!isNaN(amount)){
+                        getEstimate("sell", amount);
+                    }else {
+                        alert("Please input a number.");
+                        $(this).val("");
+                        $(this).focus();
+                    }
+                });
+                // submit new sell order check
+                $(":submit[id=sell_submit]").click(function(check){
+                    var $amount = $("#sell_amount");
+                    var amount = $amount.val();
+                    var btcBalance = @user.btcBalance;
+                    // get the trade type
+                    if($amount.val() === ""){
+                        alert("Please input a amount.");
+                        $amount.focus();
+                        return false;
+                    }
+                    if(amount > btcBalance){
+                        alert("Sorry, not enough BitCoin, you may input a number less than your BTC balance.")
+                        $amount.focus();
+                        return false;
+                    }
+                    // submit form
+                    window.location.href = "/orders/marketOrder/sell/" + $amount.val()
+                });
+
+                // ajax to get tickers
+                function getLastPrice() {
+                    $.get("/trades/lastPrice", function (data) {
+                        $("#last_btc").text(data);
+                    })
+                }
+                function getTickers() {
+                    $.getJSON("/ajax/tickers", function (data) {
+                        var buys = data.buys;
+                        var sells = data.sells;
+                        var buyhtml = "", sellhtml = "";
+                        for(var i in buys){
+                            var order = buys[i];
+                            var w = order.amount*20;
+                            if(w > 100)
+                                w = "100%";
+                            else
+                                w = w + "%";
+                            buyhtml += '<tr>' +
+                                    '<td style="width: 60px">' + 'Buy(' + i  + ')' + '</td>' +
+                                    '<td style="width: 60px">' + '£' + order.price + '</td>' +
+                                    '<td style="width: 80px">' + order.amount + '</td>' +
+                                    '<td>' + '<div class="bar" style="float: left; width: ' + w + '"></div>' + '</td>' +
+                                    '</tr>';
+                        }
+                        for(var i in sells){
+                            var order = sells[i];
+                            var w = order.amount*20;
+                            if(w > 100)
+                                w = "100%";
+                            else
+                                w = w + "%";
+                            sellhtml += '<tr>' +
+                                    '<td style="width:60px;">' + 'Sell(' + i + ')' + '</td>' +
+                                    '<td style="width:60px;">' + '£' + order.price + '</td>' +
+                                    '<td style="width:80px;">' + order.amount + '</td>' +
+                                    '<td>' + '<div class="bar" style="float: left; width: ' + w + '"></div>' + '</td>' +
+                                    '</tr>';
+                        }
+                        $("#buylist").html(buyhtml);
+                        $("#salelist").html(sellhtml);
+                    })
+                }
+                function getUserOrders() {
+                    $.getJSON('/ajax/orders/userorders', function (data) {
+                        var html = "";
+                        for(i in data){
+                            html += '<tr>' +
+                                    '<td style="width: 160px">' + (new Date(data[i].timestamp)).Format("yyyy-MM-dd hh:mm:ss") +  '</td>' +
+                                    '<td>' + data[i].tradetype + '</td>' +
+                                    '<td>' + data[i].price + '</td>' +
+                                    '<td>' + data[i].amount+ '</td>' +
+                                    '<td>' + data[i].outstanding + '</td>' +
+                                    '<td>' + data[i].status + '</td>' +
+                                    '</tr>'
+                        }
+                        $("#orders").html(html);
+                    });
+                }
+                function getUserTrades() {
+                    $.getJSON("/ajax/trades/usertrades", function (data) {
+                        var html = "";
+                        for(i in data){
+                            html += '<tr>' +
+                                    '<td>' + data[i].id + '</td>' +
+                                    '<td style="width: 160px">' + (new Date(data[i].ts)).Format("yyyy-MM-dd hh:mm:ss") +  '</td>' +
+                                    '<td>' + data[i].tradeType + '</td>' +
+                                    '<td>' + data[i].tradePrice + '</td>' +
+                                    '<td>' + data[i].amount+ '</td>' +
+                                    '<td>' + data[i].total + '</td>' +
+                                    '</tr>'
+                        }
+                        $("#trades").html(html);
+                    })
+                }
+                function getEstimate(type, amount) {
+                    $.get("/estimateCost/" + type + "/" + amount, function (data) {
+                        if(data === 0.0)
+                            $("#" + type + "_estimate").text("Sorry, We do not have orders to trade.");
+                        else
+                            $("#" + type + "_estimate").text(data.toFixed(2));
+                    })
+                }
+            });
+    </script>
+}

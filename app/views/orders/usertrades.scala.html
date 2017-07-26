@@ -1,1 +1,45 @@
-@()
+@()(implicit messages: Messages, flash: Flash, session: Session)
+
+@main(Messages("trades.usertrades")){
+    <div class="page">
+        @ordersnavi()
+        <div class="main">
+            <div class="main_title" style="background: none;margin-bottom: 0;">
+                <div>@Messages("trades.usertrades")</div>
+            </div>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Trade ID</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Trade Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="trades">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $.getJSON("/ajax/trades/usertrades", function (data) {
+                var html = "";
+                for(i in data){
+                    html += '<tr>' +
+                            '<td>' + data[i].id + '</td>' +
+                            '<td>' + (new Date(data[i].ts)).Format("yyyy-MM-dd hh:mm:ss") +  '</td>' +
+                            '<td>' + data[i].tradeType + '</td>' +
+                            '<td>' + data[i].amount+ '</td>' +
+                            '<td>' + data[i].tradePrice + '</td>' +
+                            '<td>' + data[i].total + '</td>' +
+                            '</tr>'
+                }
+                $("#trades").html(html);
+            })
+        })
+    </script>
+}

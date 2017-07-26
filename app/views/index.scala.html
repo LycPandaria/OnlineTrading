@@ -1,8 +1,165 @@
-@(orders: Seq[Order])(implicit messages: Messages, flash: Flash)
+@()(implicit messages: Messages, flash: Flash, session: Session)
 
-@main("Welcome to Play") {
-  <h1>Welcome to Play!</h1>
-  @for(order <- orders){
-    <p>@order.price</p>
-  }
+@main(Messages("application.name")) {
+  <div class="today_price">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="146" style="padding-left: 15px;">
+          Last Price<br>
+          <strong class="color_red">£</strong><strong class="color_red" id="last_price">-</strong>
+        </td>
+        <td width="276">
+          Bid／Ask<br>
+          <strong>£</strong><strong id="buy_price">-</strong> <strong>/</strong> <strong>£</strong><strong id="sell_price">-</strong>
+        </td>
+        <!-- volume
+        <td width="178">
+          Volume<br>
+          <strong id="volume">-</strong>
+        </td>
+        -->
+        <td width="132"><a id="trade-link" href="@routes.OrderController.newOrder()"  class="trade">Trade</a></td>
+      </tr>
+    </table>
+
+  </div>
+
+  <!-- Buy Orders -->
+  <div style=" margin-top: 30px;">
+    <div class="trade_list">
+      <div class="item">
+        <table>
+          <caption>Buy Orders</caption>
+          <tr>
+            <th>&nbsp;</th>
+            <th  align="left">Type</th>
+            <th  align="left">Amount</th>
+            <th  align="left">Price</th>
+          </tr>
+        </table>
+        <div class="wrap">
+          <table  style="border-top: none;">
+            <tbody id="buylist">
+              <tr>
+                <td style="text-align: center" colspan="3">Loading.....</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Sell Orders -->
+      <div class="item">
+        <table >
+          <caption>Sell Orders</caption>
+          <tr>
+            <th align="left">Price</th>
+            <th align="left">Amount</th>
+            <th align="left">Type</th>
+            <th>&nbsp;</th>
+          </tr>
+        </table>
+        <div class="wrap">
+          <table  style="border-top: none;">
+            <tbody id="salelist">
+              <tr>
+                <td style="text-align: center" colspan="3">Loading.....</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Trade History -->
+      <div class="item" style="width: 900px">
+        <table style="width: 885px">
+          <caption>Trading Records</caption>
+          <tr>
+            <th >Time</th>
+            <th >Type</th>
+            <th >Price</th>
+            <th >Amount</th>
+          </tr>
+        </table>
+        <div class="wrap" style="width: 900px">
+          <table style="width: 900px">
+            <tbody id="orderlist">
+              <tr>
+                <td style="text-align: center" colspan="5">Loading.....</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    $(document).ready(function () {
+        getTickers();
+        getTrades();
+        getTicker();
+      // get and set last price
+      setInterval(getTicker, 3000);
+      setInterval(getTrades, 3000);
+      setInterval(getTickers, 3000);
+      function getTicker() {
+        $.getJSON("/ajax/ticker",function(ticker){
+          $("#last_price").text(ticker.lastPrice);
+          $("#buy_price").text(ticker.bid);
+          $("#sell_price").text(ticker.ask);
+        });
+      }
+      
+      function getTrades() {
+        $.getJSON("/ajax/trades", function (trades) {
+          var html = "";
+          for(var i in trades){
+            html += '<tr>' +
+                    '<td width="23%">' + (new Date(trades[i].ts)).Format("yyyy-MM-dd hh:mm:ss") + '</td>' +
+                    '<td width="21%" class="' + (trades[i].tradeType === 'buy'? 'color_red': 'color_green') + '">' + (trades[i].tradeType === 'buy'? 'Buy': 'Sell') + '</td>' +
+                    '<td width="25%"> ' + '£' + trades[i].tradePrice + '</td>' +
+                    '<td>' + trades[i].amount + '</td>' +
+                    '</tr>';
+          }
+          $("#orderlist").html(html);
+        });
+      }
+      
+      function getTickers() {
+          $.getJSON("/ajax/tickers", function (data) {
+            var buys = data.buys;
+            var sells = data.sells;
+            var buyhtml, sellhtml = "";
+            for(var i in buys){
+                var order = buys[i];
+                var w = order.amount*20;
+                if(w > 100)
+                    w = "100%";
+                else
+                    w = w + "%";
+                buyhtml += '<tr>' +
+                        '<td>' + '<div class="bar" style="float: right; width: ' + w + '"></div>' + '</td>' +
+                        '<td>' + 'Buy' + '</td>' +
+                        '<td>' + order.amount + '</td>' +
+                        '<td>' + '£' + order.price + '</td>' +
+                        '</tr>';
+            }
+            for(var i in sells){
+              var order = sells[i];
+              var w = order.amount*20;
+              if(w > 100)
+                w = "100%";
+              else
+                w = w + "%";
+              sellhtml += '<tr>' +
+                      '<td>' + '£' + order.price + '</td>' +
+                      '<td>' + order.amount + '</td>' +
+                      '<td>' + 'Sell' + '</td>' +
+                      '<td>' + '<div class="bar" style="float: left; width: ' + w + '"></div>' + '</td>' +
+                      '</tr>';
+            }
+            $("#buylist").html(buyhtml);
+            $("#salelist").html(sellhtml);
+          })
+      }
+    });
+  </script>
 }

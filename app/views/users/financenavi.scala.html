@@ -1,1 +1,26 @@
-@()
+@()(implicit messages: Messages)
+
+<div class="aside" id="sidebar">
+    <div class="subnav">
+        <div class="head">
+            <a href="@routes.UserController.financeChannel()">@Messages("finance.index")</a>
+        </div>
+        <div class="body">
+            <ul id="subbox">
+                <li>
+                    <strong><a href="@routes.UserController.gbpTopupPage()">@Messages("finance.gbp.deposit")</a></strong>
+                </li>
+                <li>
+                    <strong><a href="@routes.UserController.gbpWithdrawalPage()">@Messages("finance.gbp.withdrawal")</a></strong>
+                </li>
+                <li>
+                    <strong><a href="@routes.UserController.btcTopupPage()">@Messages("finance.btc.deposit")</a></strong>
+                </li>
+                <li>
+                    <strong><a href="@routes.UserController.btcWithdrawalPage()">@Messages("finance.btc.withdrawal")</a></strong>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</div>

@@ -1,29 +1,373 @@
-@(orderForm: Form[OrderForm])(implicit messages: Messages, flash: Flash)
+@(orderForm: Form[OrderForm], user: User)(implicit messages: Messages, flash: Flash, session: Session)
 
 @main(Messages("orders.new.title")){
-    <h2>@Messages("orders.new.title")</h2>
+    <div class="page">
+        @orders.ordersnavi()
+        <div class="main">
+            <div class="main_title" style="background: none;margin-bottom: 0;">
+                <div>@Messages("orders.limitorder")</div>
+            </div>
+            <div class="trading_box">
+                <!-- Trade box -->
+                <div style="float: left;width:477px;">
+                    <div class="trading_title" id="con" style="width: 477px;">
+                        <ul id="tags">
+                            <li class="redbg selectTag" data-tag="0"><a href="#" >Buy BTC</a></li>
+                            <li class="greenbg" data-tag="1"><a href="#" class="cur">Sell BTC</a></li>
+                        </ul>
+                    </div>
+                    <div class="buying" id="tagContent0" style="height: 484px;">
+                        <div class="buy_infor" >
+                            <div class="available_momey">
+                                <h3>GBP Balance: <strong>@user.gbpBalance</strong> </h3>
+                                <span><a href="@routes.UserController.gbpTopupPage()">@Messages("topup")</a></span>
+                            </div>
+                            <form id="new_buy_order" method="post" action = "@routes.OrderController.save()">
+                                <input name="tradetype" value="buy" type="hidden">
+                                <div class="input-box">
+                                    <span>Buy Price :</span>
+                                    <br/>
+                                    <input type="text" id="buy_price" name="price" value="">
+                                </div>
+                                <div class="input-box">
+                                    <span>Buy Amount :</span>
+                                    <br/>
+                                    <input style="text" id="buy_amount" name="amount" value="">
+                                </div>
+                                <div class="input-box">
+                                    <span>Sum :</span>
+                                    <br/>
+                                    <span id="buy_sum">0</span>
+                                </div>
+                            </form>
 
-        <!-- form -->
-    @helper.form(action = routes.OrderController.save()){
-        <fieldset>
-            <legend>
-            @Messages("orders.new")
-            </legend>
-            @helper.select(
-                field = orderForm("tradetype"),
-                options = Seq(
-                    "buy" -> "Buy",
-                    "sell" -> "Sell"
-                ),
-                '_default -> "Choose One",
-                '_disabled -> Seq("FooKey", "BazKey")
-            )
-            @helper.inputText(orderForm("price"))
-            @helper.inputText(orderForm("amount"))
-        </fieldset>
+                            <!--
+                            <div class="big_buy">费率：<strong>0.2%</strong></div>
+                            -->
+                            <div class="buttonbg">
+                                <input style="width: 445px;" type="submit" id="buy_submit"  value="Buy" class="submit">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="buying" id="tagContent1" style="display:none;height: 484px;">
+                        <div class="buy_infor">
+                            <div class="available_momey">
+                                <h3>BTC Balance : <strong>@user.btcBalance</strong> </h3>
+                                <span><a href="@routes.UserController.btcTopupPage()">@Messages("topup")</a></span>
+                            </div>
+                            <form id="new_sell_order" method="post" action = "@routes.OrderController.save()">
+                                <input name="tradetype" value="sell" type="hidden">
+                                <div class="input-box">
+                                    <span>Sell Price :</span>
+                                    <br/>
+                                    <input type="text" id="sell_price" name="price" value="">
+                                </div>
+                                <div class="input-box">
+                                    <span>Sell Amount :</span>
+                                    <br/>
+                                    <input style="text" id="sell_amount" value="" name="amount">
+                                </div>
+                                <div class="input-box">
+                                    <span>Sum :</span>
+                                    <br/>
+                                    <span id="sell_sum">0</span>
+                                </div>
+                            </form>
 
-        <p>
-            <input type="submit" class="btn primary" value='@Messages("orders.new.submit")'>
-        </p>
-    }
+                            <!--
+                            <div class="big_buy">费率：<strong>0.2%</strong></div>
+                            -->
+                            <div class="buttonbg2">
+                                <input style="width: 445px;" type="submit"  id="sell_submit" value="Sell" class="submit">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Current Orders list -->
+                <div class="strike_list" style="float: right;width: 300px;min-height: 535px;border-top: 1px solid #D5D5D5;">
+                    <div class="new_strike">
+                        <div class="strike_title" style="height: 50px;line-height: 50px; font-size:16px;">Last Price : £
+                            <strong id="last_btc">-</strong>
+                        </div>
+                        <div class="list">
+                            <table width="300" border="0" cellpadding="0" cellspacing="0" style="border-bottom: none;background: white;">
+                                <tbody id="salelist">
+                                    <tr>
+                                        <td colspan="3">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="title">
+                            <span class="first">Buy/Sell</span>
+                            <span class="second">Price</span>
+                            <span class="last">Amount</span>
+                        </div>
+                        <table width="300" border="0" cellpadding="0" cellspacing="0" style="border-top: none;background: white;">
+                            <tbody id="buylist">
+                                <tr>
+                                    <td colspan="3">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div style="clear:both;"></div>
+            </div>
+            <div style="clear:both;"></div>
+        </div>
+        <!-- Orders and Trades History Tab -->
+        <div class="tab_box" style="margin-top: 5px;">
+            <div class="notes_title" id="con">
+                <ul id="tags1">
+                    <li class="selectTag2" data-tag="0"><a href="javascript:void(0);" >My Orders</a></li>
+                    <li class="" data-tag="1"><a href="javascript:void(0);">Trades History</a></li>
+                </ul>
+            </div>
+            <div class="box1" id="tagC0" style="font-size:12px;">
+                <div class="tit">
+                    <span style="width:160px">Create Time</span>
+                    <span style="width:100px">Type</span>
+                    <span style="width:120px">Price</span>
+                    <span style="width:80px">Amount</span>
+                    <span style="width:120px">Outstanding</span>
+                    <span style="width:100px">Status</span>
+                    <!--
+                    <span style="width:50px; text-align:center;">Operation</span>
+                    -->
+                </div>
+                <table>
+                    <tbody id="orders">
+
+                    </tbody>
+                </table>
+                <div class="pages" style="margin-top:15px;"></div>
+            </div>
+            <div class="box1" id="tagC1" style="font-size:12px; display: none">
+                <div class="tit">
+                    <span style="width:80px">Trade ID</span>
+                    <span style="width:112px">Time</span>
+                    <span style="width:140px">Trade Type</span>
+                    <span style="width:100px">Trade Price</span>
+                    <span style="width:100px">Trade Amount</span>
+                    <span style="width:150px">Sum</span>
+                </div>
+                <table>
+                    <tbody id="trades"></tbody>
+                </table>
+                <div class="pages" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            getLastPrice();
+            getTickers();
+            getUserOrders();
+            setInterval(getLastPrice, 2000);
+            setInterval(getTickers, 2000);
+            // Tag Switch
+           $("#tags li").click(function () {
+               var tag_id = $(this).attr("data-tag");
+               $("#tags li").removeClass("selectTag");
+               $(this).addClass("selectTag");
+               $("#tagContent0").hide();
+               $("#tagContent1").hide();
+               $("#tagContent"+tag_id).show();
+           });
+           $("#tags1 li").click(function () {
+               var tag_id = $(this).attr("data-tag");
+               $("#tags1 li").removeClass("selectTag2");
+               $(this).addClass("selectTag2");
+               $("#tagC0").hide();
+               $("#tagC1").hide();
+               $("#tagC"+tag_id).show();
+               if(tag_id === '0')
+                   getUserOrders();
+               else
+                   getUserTrades();
+           });
+
+           // buy_sum calculator
+            $("#buy_price").on("input propertychange", function () {
+               var price = $(this).val();
+                if(!isNaN(price)){
+                  var amount = $("#buy_amount").val();
+                  if(amount){
+                      $("#buy_sum").text((price * amount).toFixed(2));
+                  }
+               }else {
+                    alert("Please input a number.");
+                    $(this).val("");
+                    $(this).focus();
+                }
+            });
+            $("#buy_amount").on("input propertychange", function () {
+                var amount = $(this).val();
+                if(!isNaN(amount)){
+                    var price = $("#buy_price").val();
+                    if(price){
+                        //alert((price * amount).toFixed(2));
+                        $("#buy_sum").text((price * amount).toFixed(2));
+                    }
+                }else {
+                    alert("Please input a number.");
+                    $(this).val("");
+                    $(this).focus();
+                }
+            });
+            // new buy order checks
+            $(":submit[id=buy_submit]").click(function(check){
+                var $price = $("#buy_price");
+                var $amount = $("#buy_amount");
+                var gbpBalance = @user.gbpBalance;
+                // get the trade type
+                if($price.val() === ""){
+                    alert("Please input a price.");
+                    $price.focus();
+                    return false;
+                }
+                if($amount.val() === ""){
+                    alert("Please input a amount.");
+                    $amount.focus();
+                    return false;
+                }
+                if(gbpBalance < ($price.val() * $amount.val())){
+                    alert("Sorry, you do not have so much GBP to buy.")
+                    $amount.focus();
+                    return false;
+                }
+                // submit form
+                $("#new_buy_order").submit();
+            });
+
+            // sell_sum claculator
+            $("#sell_price").on("input propertychange", function () {
+                var price = $(this).val();
+                if(!isNaN(price)){
+                    var amount = $("#sell_amount").val();
+                    if(amount){
+                        $("#sell_sum").text((price * amount).toFixed(2));
+                    }
+                }else {
+                    alert("Please input a number.");
+                    $(this).val("");
+                    $(this).focus();
+                }
+            });
+            $("#sell_amount").on("input propertychange", function () {
+                var amount = $(this).val();
+                if(!isNaN(amount)){
+                    var price = $("#sell_price").val();
+                    if(price){
+                        //alert((price * amount).toFixed(2));
+                        $("#sell_sum").text((price * amount).toFixed(2));
+                    }
+                }else {
+                    alert("Please input a number.");
+                    $(this).val("");
+                    $(this).focus();
+                }
+            });
+            // submit new sell order check
+            $(":submit[id=sell_submit]").click(function(check){
+                var $price = $("#sell_price");
+                var $amount = $("#sell_amount");
+                var btcBalance = @user.btcBalance;
+                // get the trade type
+                if($price.val() === ""){
+                    alert("Please input a price.");
+                    $price.focus();
+                    return false;
+                }
+                if($amount.val() === ""){
+                    alert("Please input a amount.");
+                    $amount.focus();
+                    return false;
+                }
+                if(btcBalance < $amount.val()){
+                    alert("Sorry, you do not have so much BTC to sell.");
+                    $amount.focus();
+                    return false;
+                }
+                $("#new_sell_order").submit();
+            });
+
+            // ajax to get tickers
+            function getLastPrice() {
+                $.get("/trades/lastPrice", function (data) {
+                    $("#last_btc").text(data);
+                })
+            }
+            function getTickers() {
+                $.getJSON("/ajax/tickers", function (data) {
+                    var buys = data.buys;
+                    var sells = data.sells;
+                    var buyhtml = "", sellhtml = "";
+                    for(var i in buys){
+                        var order = buys[i];
+                        var w = order.amount*20;
+                        if(w > 100)
+                            w = "100%";
+                        else
+                            w = w + "%";
+                        buyhtml += '<tr>' +
+                                '<td style="width: 60px">' + 'Buy(' + i  + ')' + '</td>' +
+                                '<td style="width: 60px">' + '£' + order.price + '</td>' +
+                                '<td style="width: 80px">' + order.amount + '</td>' +
+                                '<td>' + '<div class="bar" style="float: left; width: ' + w + '"></div>' + '</td>' +
+                                '</tr>';
+                    }
+                    for(var i in sells){
+                        var order = sells[i];
+                        var w = order.amount*20;
+                        if(w > 100)
+                            w = "100%";
+                        else
+                            w = w + "%";
+                        sellhtml += '<tr>' +
+                                '<td style="width:60px;">' + 'Sell(' + i + ')' + '</td>' +
+                                '<td style="width:60px;">' + '£' + order.price + '</td>' +
+                                '<td style="width:80px;">' + order.amount + '</td>' +
+                                '<td>' + '<div class="bar" style="float: left; width: ' + w + '"></div>' + '</td>' +
+                                '</tr>';
+                    }
+                    $("#buylist").html(buyhtml);
+                    $("#salelist").html(sellhtml);
+                })
+            }
+            function getUserOrders() {
+                $.getJSON('/ajax/orders/userorders', function (data) {
+                    var html = "";
+                    for(i in data){
+                        html += '<tr>' +
+                                '<td style="width: 160px">' + (new Date(data[i].timestamp)).Format("yyyy-MM-dd hh:mm:ss") +  '</td>' +
+                                '<td>' + data[i].tradetype + '</td>' +
+                                '<td>' + data[i].price + '</td>' +
+                                '<td>' + data[i].amount+ '</td>' +
+                                '<td>' + data[i].outstanding + '</td>' +
+                                '<td>' + data[i].status + '</td>' +
+                                '</tr>'
+                    }
+                    $("#orders").html(html);
+                });
+            }
+            function getUserTrades() {
+                $.getJSON("/ajax/trades/usertrades", function (data) {
+                    var html = "";
+                    for(i in data){
+                        html += '<tr>' +
+                                '<td>' + data[i].id + '</td>' +
+                                '<td style="width: 160px">' + (new Date(data[i].ts)).Format("yyyy-MM-dd hh:mm:ss") +  '</td>' +
+                                '<td>' + data[i].tradeType + '</td>' +
+                                '<td>' + data[i].tradePrice + '</td>' +
+                                '<td>' + data[i].amount+ '</td>' +
+                                '<td>' + data[i].total + '</td>' +
+                                '</tr>'
+                    }
+                    $("#trades").html(html);
+                })
+            }
+        });
+    </script>
 }

@@ -8,7 +8,38 @@ GET     /                           controllers.HomeController.index
 POST    /orders                     controllers.OrderController.save
 GET     /orders                     controllers.OrderController.list
 GET     /orders/new                 controllers.OrderController.newOrder
+GET     /orders/marketOrder         controllers.OrderController.newMarketOrderPage
+GET     /orders/marketOrder/:tradeType/:amount  controllers.OrderController.addMarketOrder(tradeType: String, amount: Double)
+GET     /estimateCost/:tradeType/:amount       controllers.OrderController.estimateCost(tradeType: String, amount: Double)
 
+GET     /users/loginPage            controllers.UserController.loginPage
+POST    /users/login                controllers.UserController.login
+GET     /users/registerPage         controllers.UserController.registerPage
+POST    /users/register             controllers.UserController.register
+GET     /users/logout               controllers.UserController.logout
+GET     /users/userOrdersPage       controllers.UserController.userOrdersPage
+GET     /users/userTradesPage       controllers.UserController.userTradesPage
+
+GET     /finance/index              controllers.UserController.financeChannel
+GET     /finance/gbp/topup          controllers.UserController.gbpTopupPage
+GET     /finance/gbp/topup/:amount  controllers.UserController.gbpTopup(amount:Double)
+GET     /finance/btc/topup          controllers.UserController.btcTopupPage
+GET     /finance/btc/topup/:amount  controllers.UserController.btcTopup(amount:Double)
+GET     /finance/gbp/withdrawal     controllers.UserController.gbpWithdrawalPage
+GET     /finance/gbp/withdrawal/:amount         controllers.UserController.gbpWithdrawal(amount:Double)
+GET     /finance/btc/withdrawal     controllers.UserController.btcWithdrawalPage
+GET     /finance/btc/withdrawal/:amount         controllers.UserController.btcWithdrawal(amount:Double)
+
+GET     /trades/lastPrice           controllers.TradeController.lastPrice
+
+GET     /ajax/ticker                controllers.TradeController.ajaxTicker
+GET     /ajax/trades                controllers.TradeController.ajaxTrades
+GET     /ajax/tickers               controllers.OrderController.ajaxTickers
+GET     /ajax/orders/userorders     controllers.OrderController.userOrders
+GET     /ajax/trades/usertrades     controllers.TradeController.userTrades
+
+GET     /api/limit/:uid/:tradeType/:amount/:price   controllers.OrderController.apiNewLimitOrder(uid:Long, tradeType:String,amount:Double, price:Double)
+GET     /api/market/:uid/:tradeType/:amount         controllers.OrderController.apiNewMarketOrder(uid:Long, tradeType:String,amount:Double)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

@@ -1,1 +1,48 @@
-@()
+@()(implicit messages: Messages, flash: Flash, session: Session)
+
+@main(Messages("orders.userorders")){
+    <div class="page">
+        @ordersnavi()
+        <div class="main">
+            <div class="main_title" style="background: none;margin-bottom: 0;">
+                <div>@Messages("orders.userorders")</div>
+            </div>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Create Time</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Outstanding</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="orders">
+                
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function () {
+            $.getJSON('/ajax/orders/userorders', function (data) {
+                var html = "";
+                for(i in data){
+                    html += '<tr>' +
+                            '<td>' + (new Date(data[i].timestamp)).Format("yyyy-MM-dd hh:mm:ss") +  '</td>' +
+                            '<td>' + data[i].tradetype + '</td>' +
+                            '<td>' + data[i].amount+ '</td>' +
+                            '<td>' + data[i].outstanding + '</td>' +
+                            '<td>' + data[i].price + '</td>' +
+                            '<td>' + data[i].status + '</td>' +
+                            '</tr>'
+                }
+                $("#orders").html(html);
+            });
+        })
+    </script>
+}
+

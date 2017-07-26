@@ -1,1 +1,43 @@
-@()
+@()(implicit messages: Messages, flash: Flash, session: Session)
+@main(Messages("finance.gbp.deposit")){
+    <div class="page">
+        @financenavi()
+        <div class="main">
+            <div class="main_title" style="background: none;margin-bottom: 0;">
+                <div>@Messages("finance.gbp.deposit")</div>
+            </div>
+
+            <p>Input the deposit amount:</p>
+            <div class="input-group">
+                <span class="input-group-addon">£</span>
+                <input type="text" id="amount">
+                <span class="input-group-addon">.00</span>
+            </div>
+
+            <input style="button" type="submit" value="@Messages("button.confirm")" id="btn" class="submit btn">
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            var $amount = $("#amount");
+            $amount.on("input propertychange", function () {
+                var amount = $amount.val();
+                if(isNaN(amount)){
+                    alert("Please input a number.");
+                    $(this).val("");
+                    $(this).focus();
+                }
+            });
+            $("#btn").click(function () {
+                var amount = $amount.val();
+                if(amount === ""){
+                    alert("Please input an amount.");
+                    $amount.focus();
+                }else {
+                    window.location.href = '/finance/gbp/topup/' + amount
+                }
+            })
+        })
+    </script>
+}
+

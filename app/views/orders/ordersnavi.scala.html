@@ -1,1 +1,35 @@
-@()
+@()(implicit messages: Messages)
+
+<div class="aside" id="sidebar">
+    <div class="subnav">
+        <div class="head">
+            <a href="@routes.OrderController.newOrder()">@Messages("trades.center")</a>
+        </div>
+        <div class="body">
+            <ul id="subbox">
+                <li>
+                    <strong><a href="@routes.OrderController.newOrder()">@Messages("orders.limitorder")</a></strong>
+                </li>
+                <li>
+                    <strong><a href="/orders/marketOrder">@Messages("orders.marketorder")</a></strong>
+                </li>
+                <li>
+                    <strong><a href="@routes.UserController.userOrdersPage()">@Messages("orders.manage")</a></strong>
+                </li>
+                <!--
+                <li>
+                    <strong><a href="/user_exchange/trustplan/" data-target="/user_exchange/cointrade/coin/btc/">计划委托</a></strong>
+                </li>
+                -->
+                <li>
+                    <strong><a href="@routes.UserController.userTradesPage()">@Messages("trades.list")</a></strong>
+                </li>
+                <!--
+                <li>
+                    <strong><a href="/user_exchange/api/" data-target="/user_exchange/cointrade/coin/btc/">API申请</a></strong>
+                </li>
+                -->
+            </ul>
+        </div>
+    </div>
+</div>

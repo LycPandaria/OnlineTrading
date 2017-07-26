@@ -1,1 +1,38 @@
-@()
+@(user: User)(implicit messages: Messages, flash: Flash, session: Session)
+
+@main(Messages("finance.index")){
+    <div class="page">
+        @financenavi()
+        <div class="main">
+            <div class="main_title" style="background: none;margin-bottom: 0;">
+                <div>@Messages("finance.index")</div>
+            </div>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>@Messages("currency")</th>
+                        <th>@Messages("balance")</th>
+                        <th>@Messages("reserved")</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>@Messages("gbp")</td>
+                        <td>@user.gbpBalance</td>
+                        <td>@user.gbpReserved</td>
+                        <td><a href="@routes.UserController.gbpTopupPage()">@Messages("topup")</a></td>
+                    </tr>
+                    <tr>
+                        <td>@Messages("btc")</td>
+                        <td>@user.btcBalance</td>
+                        <td>@user.btcReserved</td>
+                        <td><a href="@routes.UserController.btcTopupPage()">@Messages("topup")</a> </td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+}

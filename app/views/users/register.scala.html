@@ -1,1 +1,80 @@
-@()
+@(registerForm: Form[RegisterForm])(implicit messages: Messages, flash: Flash, session: Session)
+
+@main(Messages("register")){
+
+    <div class="wrapper">
+        <div class="current">
+            <a href="/">@Messages("home")</a> &gt; @Messages("register")		</div>
+    </div>
+    <div class="wrapper">
+        <div class="register">
+            <form  action="@routes.UserController.register()" method="post">
+                <table width="80%" border="0" cellpadding="0" cellspacing="0" style="margin-top: 40px;">
+                    <tr>
+                        <th>Username : </th>
+                        <td width="330">
+                            <input type="text" value="" name="username"  id="username" class="text"/></td>
+                        <td width="310">
+                            <div class="form_tip" id="usermsg">Please input the username.</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Password : </th>
+                        <td><input type="password" name="password"  id="password" class="text"/></td>
+                        <td>
+                            <div class="form_tip" id="pwdmsg">Please input the password.</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Email : </th>
+                        <td><input type="email" id="email" name="email" class="text hover"/></td>
+                        <td>
+                            <div class="form_tip" id="emailmsg">Please input the email.</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td><button type="submit" id="submit" class="btn btn-default submit">@Messages("register")</button></td>
+                        <td>&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td>Already have an account? <a href="@routes.UserController.loginPage()">Log in</a></td>
+                        <td>&nbsp;</td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        $(document).ready(function () {
+            $(":submit[id=submit]").click(function(check){
+                var $username = $("#username");
+                var $password = $("#password");
+                var $email = $("#email");
+                if($username.val() === ""){
+                    alert("Please input the username.");
+                    $username.focus();
+                    check.preventDefault();
+                } else if($password.val() === ""){
+                    alert("Please inout the password.");
+                    $password.focus();
+                    check.preventDefault();
+                } else if($email.val() === ""){
+                    alert("Please input an e-mail address.");
+                    $email.focus();
+                    check.preventDefault();
+                } else{
+                    // valid input
+                    // do md5
+                    var md5 = $.md5($password.val());
+                    $password.val(md5);
+                }
+                $("form").submit()
+            })
+        })
+    </script>
+}
+

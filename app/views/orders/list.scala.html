@@ -1,4 +1,4 @@
-@(buys: Seq[OrderForm], sells: Seq[OrderForm])(implicit messages: Messages, flash: Flash)
+@(buys: Seq[OrderForm], sells: Seq[OrderForm], trades: Seq[Trade])(implicit messages: Messages, flash: Flash, session: Session)
 
 @main(Messages("application.name")){
     <table class="table table-bordered table-striped">
@@ -41,11 +41,40 @@
         </tbody>
     </table>
 
-    <p>
-        <span class="glyphicon glyphicon-plus">
-            <a href="@routes.OrderController.newOrder()" class="btn">
+    <table class="table table-bordered table-striped">
+        <caption>Trade History</caption>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+        @for(trade <- trades){
+            <tr>
+                <td>@trade.timestamp</td>
+                <td>@trade.tradeType</td>
+                <td>@trade.amount</td>
+                <td>@trade.tradePrice</td>
+                <td>@trade.total</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    @if(session.get("username").isDefined){
+        <p>
+            <span class="glyphicon glyphicon-plus">
+                <a href="@routes.OrderController.newOrder()" class="btn">
                 @Messages("orders.new.command")
-            </a>
-        </span>
-    </p>
+                </a>
+            </span>
+        </p>
+    }
+
+
+
 }

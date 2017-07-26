@@ -1,19 +1,35 @@
-body { color:black; margin-top:50px }
-body, p, label { font-size:15px; }
+*{margin: 0px; padding: 0px}
+html * {
+    outline: 0;
+    zoom: 1;
+}
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, input, textarea, p, blockquote, th, td {
+    margin: 0;
+    padding: 0;
+}
+body { color:black;}
+body, p, label { font-size:15px;
+    color: rgb(51, 51, 51);
+    font-family: Arial;
+}
+ul li{list-style: none}
+ul, ol {padding: 0px; margin: 0px}
+a {
+    outline: none;
+    text-decoration: none;
+    cursor: pointer;
+}
+.clearfix {
+    display: block;
+}
 .label { font-size:13px; line-height:16px; }
 .alert-info { border-color:transparent; background-color:#3A87AD;
     color:white; font-weight:bold; }
-div.screenshot { width: 800px; margin:20px; }
-.navbar-fixed-top .navbar-inner { padding-left:20px; }
-.navbar .nav > li > a { color:#bbb; }
-.screenshot > .container { width: 760px; padding: 20px; }
-.navbar-fixed-top, .navbar-fixed-bottom { position:relative; }
 h1 { font-size:125%; }
 table { border-collapse: collapse; width:100%; }
 th, td { text-align:left; padding: 0.3em 0;
     border-bottom: 1px solid white; }
 tr.odd td { }
-form { float:left; margin-right: 1em; }
 legend { border: none; }
 fieldset > div { margin: 12px 0; }
 .help-block { display: inline; vertical-align: middle; }
@@ -23,3 +39,547 @@ footer { clear: both; text-align: right; }
 dl.orders { margin-top: 0; }
 dt { clear: right; }
 .barcode { float:right; margin-bottom: 10px; border: 4px solid white; }
+.show-radius {
+    -webkit-transform: translateY(0);
+    -ms-transform: translateY(0);
+    transform: translateY(0);
+    -webkit-transition-duration: 0.85s;
+    transition-duration: 0.85s;
+    -webkit-transition-timing-function: cubic-bezier(0.19, 1.32, 0.48, 1);
+    transition-timing-function: cubic-bezier(0.19, 1.32, 0.48, 1);
+    opacity: 1;
+    filter: alpha(opacity=100);
+}
+.sB-Top {
+    opacity: 0;
+    -webkit-transform: translateY(200px);
+    -ms-transform: translateY(200px);
+    transform: translateY(200px);
+}
+/* index-top box */
+.top {
+    background: #4c4c4c;
+    color: white;
+    height: 30px;
+    line-height: 30px;
+    width: 100%;
+    position: fixed;
+    z-index: 100000;
+}
+.topbox {
+    width: 1000px;
+    height: 30px;
+    margin: 0 auto;
+    position: relative;
+    font-size: 12px;
+}
+.topbox ul {float: left; }
+.topbox ul li {
+    float: left;
+    padding-left: 30px;
+    padding-right: 10px;
+    text-align: center;
+    line-height: 30px;
+    transition: all 0.5s ease-in-out 0s;
+    -webkit-transform: translate3d(0,0,0);
+}
+.btc-logo {
+    background: url('/assets/images/top_logo_btc.png') no-repeat 8px 4px;
+    background-size: 20px;
+}
+.current {
+    font-size: 12px;
+    padding: 15px 0;
+}
+.wrapper {
+    width: 1000px;
+    margin: 0 auto;
+    height: auto;
+    overflow: hidden;
+    clear: both;
+}
+.text {
+    border: #d5d5d5 solid 1px;
+    background: #fff;
+    font-size: 12px;
+    height: 16px;
+    padding: 8px 8px;
+}
+.btn {
+    background: #aa5800;
+    border: #aa5800 solid 1px;
+    height: 35px;
+    line-height: 35px;
+    color: #fff;
+    padding: 0 15px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 14px;
+}
+.uin_icon {
+    background: url(/assets/images/login-icon.png) no-repeat -10px -11px;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    position: absolute;
+    left: 7px;
+    top: 11px;
+}
+.uni2 {
+    background-position: -10px -52px;
+}
+.page-wrap {padding-top: 20px}
+.page {
+    height: auto;
+    overflow: hidden;
+    clear: both;
+    position: relative;
+}
+/* orders navigation */
+.aside {
+    width: 200px;
+    background: #f7f6f2;
+    border-top: #aa5800 solid 2px;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+.aside .head {
+    border-bottom: #dddbd4 solid 1px;
+}
+.aside .head a {
+    height: 40px;
+    padding-left: 20px;
+    line-height: 40px;
+    font-size: 16px;
+    display: block;
+}
+.aside a {  color: #333333;  }
+.aside .body {
+    border-top: #ffffff solid 1px;
+    font-size: 14px;
+}
+.aside .body li {
+    padding-left: 20px;
+    height: 40px;
+    line-height: 40px;
+}
+.main {
+    width: 780px;
+    float: right;
+    display: inline;
+    overflow: hidden;
+    min-height: 600px;
+}
+/* index - logo*/
+.header {
+    height: 65px;
+    padding: 15px 0;
+    z-index: 19;
+    position: relative;
+    top: 30px;
+    margin-bottom: 30px;
+}
+.header .wrapper {overflow: visible}
+
+.header .logo{
+    width: 400px;
+    float: left;
+    display: inline;
+    margin-top: 4px;
+}
+/* index - nav*/
+.navbar-default .navbar-inner { padding-left:20px; background: #f7f6f2;}
+.navbar .nav > li > a { color:#bbb; }
+
+/* goTop button */
+.scrollBtn {
+    position: fixed;
+    right: 10px;
+    bottom: 20px;
+    width: 54px;
+    z-index: 800;
+}
+.scrollBtn li {  height: 48px}
+#goTop{cursor: pointer; background-position: -1px -227px;}
+.scrollBtn a {
+    display: block;
+    width: 30px;
+    height: 30px;
+    padding: 6px;
+    overflow: hidden;
+    color: #aa5800;
+    text-align: center;
+    background-color: white;
+    opacity: 1;
+    filter: alpha(opacity=100);
+    text-indent: -300px;
+    color: #aa5800;
+    border-radius: 50%;
+    background-image: url('/assets/images/icons.png');
+    border: 1px solid #d68630;
+}
+/* current price*/
+.today_price{
+    height: auto;
+    overflow: hidden;
+    padding: 30px 0;
+    margin-top: 2px;
+}
+.today_price table{width: 1000px; margin: 0px auto}
+.today_price table strong {
+    color: #333333;
+    font-size: 20px;
+    margin-top: 5px;
+}
+.color_red{color: #cc0000!important;}
+.color_green{    color: #669900 !important;}
+.today_price .trade {
+    background: url("/assets/images/forward-icon.png") #F7F6F2 86px 9px no-repeat;
+    background-size: auto 22px;
+    width: 130px;
+    height: 40px;
+    display: block;
+    text-indent: 20px;
+    line-height: 40px;
+    font-size: 16px;
+    transition: all 0.2s ease-in-out 0s;
+    border-radius: 3px;
+}
+/* buy, sell, order history table*/
+.trade_list {
+    width: 1000px;
+    margin: 0 auto;
+    height: auto;
+    overflow: hidden;
+}
+.trade_list .item {
+    width: 450px;
+    float: left;
+    display: inline;
+}
+.trade_list .item table{border: #eee solid 1px; width: 435px}
+.trade_list .item caption {padding: 10px 0 10px 0; font-size: 16px; text-align: left}
+.trade_list .item th,
+.trade_list .item td {padding: 5px 14px; width: 25%}
+.trade_list .item #buylist .bar{background-color:#669900; height: 28px}
+.trade_list .item #salelist .bar{background-color:#cc0000; height: 28px}
+.trade_list .item th{  background: #f7f6f2; border-bottom: #d5d5d5 solid 1px;}
+.trade_list .item .wrap {
+    height: 480px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    border: 1px solid #eee;
+    border-top: none;
+    width: 450px;
+    position: relative;
+    background-color: #FFFFFF;
+}
+.trade_list .item .wrap table {
+    border: none;
+    width: 100%;
+}
+
+/* Login Page */
+.login_banner {
+    width: 672px;
+    float: left;
+    display: inline;
+}
+.login_form {
+    width: 286px;
+    float: right;
+    display: inline;
+    height: 268px;
+    position: relative;
+    padding: 30px 0 0 30px;
+    border: #d7d7d7 solid 1px;
+}
+.login_form .body {
+    width: 250px;
+}
+.login_form .body .login-div {
+    height: 55px;
+    position: relative;
+    clear: both;
+}
+.login_form .text {
+    height: 16px;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    padding-left: 32px;
+    width: 201px;
+}
+.login_form .submit {
+    width: 250px;
+    font-size: 16px;
+}
+.login-footer {
+    width: 100%;
+    text-align: left;
+    text-indent: 1.2em;
+    background: rgba(255,255,255,.8);
+    height: 40px;
+    line-height: 40px;
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    font-size: 14px;
+}
+
+/* Register page */
+.register {
+    text-align: center;
+    border: #d5d5d5 solid 1px;
+    background: #fff;
+    min-height: 400px;
+}
+.register table {
+    margin: 60px 0 40px 0px;
+    font-size: 14px;
+}
+.register th {
+    text-align: right;
+    font-size: 12px;
+    color: #666666;
+}
+.register table td {
+    padding: 7px 0;
+    font-size: 12px;
+    color: #666666;
+}
+.register .text {
+    font-size: 12px;
+    width: 305px;
+}
+.form_tip {
+    padding: 8px 0;
+    background: url(/assets/images/info.png) no-repeat left center;
+    padding-left: 25px;
+}
+.form_tip_error {
+    background: url(/assets/images/error.png) no-repeat left center;
+    color: #ff0000;
+}
+.form_tip_success {
+    background: url(/assets/images/success.png) no-repeat left center;
+}
+.register .submit {
+    width: 295px;
+    font-size: 16px;
+    font-weight: bold;
+    height: 40px;
+}
+
+/* Trade Center */
+.main_title {
+    padding-bottom: 15px;
+    line-height: 1em;
+    font-size: 18px;
+    color: #333333;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+.trading_box {
+    width: 778px;
+    height: auto;
+    border-bottom: 1px solid #d5d5d5;
+    border-right: 1px solid #d5d5d5;
+}
+.trading_title {
+    width: 780px;
+    height: 51px;
+    line-height: 51px;
+    background: #f7f6f2;
+    border-bottom: 1px solid #d5d5d5;
+}
+.trading_title ul li {
+    float: left;
+    text-align: center;
+    line-height: 50px;
+}
+.trading_title ul .redbg {
+    color: #cc0000;
+}
+.trading_title ul .selectTag {
+    background: #fff;
+    border-top: 2px solid #cc0000;
+    height: 50px;
+    border-right: 1px solid #d5d5d5;
+    border-left: 1px solid #D5D5D5;
+}
+.trading_title ul li a {
+    padding: 0 35px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #cc0000;
+}
+.trading_title ul .cur {
+    color: #669900;
+}
+.buying .buy_infor {
+    width: 450px;
+    margin-left: 15px;
+    padding-top: 15px;
+    float: left;
+}
+.buying .buy_infor .available_momey {
+    width: 450px;
+    background: url(/assets/images/img40.png) repeat-x bottom;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    height: 25px;
+    line-height: 25px;
+    line-height: 1em;
+}
+.buying .buy_infor .available_momey h3 {
+    float: left;
+    color: #333;
+    font-size: 14px;
+}
+.buying .buy_infor .available_momey h3 strong {
+    color: #669900;
+}
+.buying .buy_infor .available_momey span {
+    float: right;
+}
+.buying .buy_infor .available_momey span a {
+    color: #a05c1f;
+    border: 1px solid #a05c1f;
+    width: 56px;
+    display: inline-block;
+    line-height: 26px;
+    text-align: center;
+    border-radius: 5px;
+}
+.buying .buy_infor .input-box{
+    margin-top: 5px;
+    height: 70px;
+}
+.buying .buy_infor .input-box span{float: left; text-align: left}
+.buying .buy_infor .input-box input{
+    width: 110px;
+    height: 38px;
+    border: 1px solid #d5d5d5;
+    padding-left: 5px;
+}
+.buttonbg .submit, .buttonbg2 .submit {
+    width: 270px;
+    height: 40px;
+    background: #ff0000;
+    font-size: 18px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+    border: none;
+}
+.buttonbg2 .submit {
+    background: #669900;
+}
+.strike_list {
+    width: 300px;
+    height: 525px;
+    border-left: 1px solid #d5d5d5;
+    float: right;
+}
+.strike_title {
+    padding-left: 10px;
+    height: 41px;
+    line-height: 41px;
+    border-bottom: 1px solid #d5d5d5;
+}
+.strike_title strong {
+    font-size: 16px;
+}
+.list {
+    height: 229px;
+}
+.title {
+    height: 23px;
+    line-height: 23px;
+    background: #f7f6f2;
+    border-bottom: 1px solid #d5d5d5;
+    border-top: 1px solid #d5d5d5;
+}
+.title span {
+    float: left;
+    display: inline-block;
+    padding-left: 10px;
+    font-size: 12px;
+}
+.title .first {  width: 80px;  }
+.title .second{ width: 60px}
+.title .last{ width: 80px}
+
+/* Orders and Trade history Tab */
+.tab_box {
+    width: 780px;
+    height: auto;
+    margin-top: 25px;
+    float: right;
+}
+.notes_title {
+    width: 780px;
+    height: 36px;
+    line-height: 36px;
+    background: #f7f6f2;
+    border-bottom: 1px solid #d5d5d5;
+}
+.notes_title ul li {
+    float: left;
+    line-height: 40px;
+}
+.notes_title ul li a {
+    padding: 0 35px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #aa5800;
+}
+.selectTag2{
+    background: #fff;
+    border-top: 2px solid #aa5800;
+    height: 35px;
+    border-left: 1px solid #d5d5d5;
+    border-right: 1px solid #d5d5d5;
+}
+.box1 {
+    min-height: 470px;
+    overflow: visible;
+    border-bottom: 1px solid #d5d5d5;
+    border-left: 1px solid #d5d5d5;
+    border-right: 1px solid #d5d5d5;
+}
+.box1 .tit {
+    clear: left;
+    height: 40px;
+    line-height: 40px;
+    border-bottom: 1px dotted #d5d5d5;
+}
+.box1 .tit span {
+    padding: 0 8px;
+    display: inline-block;
+    float: left;
+    text-align: center;
+}
+.box1 table td{text-align: center; padding: 6px; font-size: 13px}
+.strike_list table td{text-align: center; font-size: 13px; padding-left: 10px}
+.strike_list #buylist td .bar {background-color:#669900; height: 28px}
+.strike_list #salelist td .bar {background-color:#cc0000; height: 28px}
+
+/* finance center*/
+.withdrawal-box{
+    text-align: center;
+    padding: 30px 30px;
+    width: 500px;
+    height: 500px;
+    overflow: hidden;
+    border: #e1e1e1 solid 1px;
+}
+.withdrawal-box #btn {
+    margin-top: 20px;
+    width: 270px;
+    height: 40px;
+}
+
+
+

@@ -1,1 +1,80 @@
-@()
+@()(implicit session: Session, messages: Messages)
+
+<div class="top">
+    <div class="topbox">
+        <ul>
+            <li class="btc-logo">
+                <span class="type"></span>£<i id="rate-btc">-</i><em></em>
+            </li>
+        </ul>
+    </div>
+</div>
+<div class="header">
+    <div class="wrapper">
+        <div class="logo">
+            <a href="#" ><img src="@routes.Assets.versioned("images/logo.jpg")"  style="width: 400px"></a>
+        </div>
+    </div>
+</div>
+<nav class="navbar navbar-default">
+    <div class="navbar-inner">
+        <div class="container-fluid">
+            <a class="brand" href="@routes.HomeController.index()">
+            @Messages("home")
+            </a>
+            <ul class="nav navbar-nav">
+                @if(session.get("username").isDefined){
+                    <li class="divider-vertical"></li>
+                    <li >
+                        <a href="@routes.OrderController.newOrder()">
+                        @Messages("trades.center")
+                        </a>
+                    </li>
+                    <li class="divider-vertical"></li>
+                    <li>
+                        <a href="@routes.UserController.financeChannel()">
+                            @Messages("finance.index")
+                        </a>
+                    </li>
+                    <li class="divider-vertical"></li>
+                    <li>
+                        <a href="#">
+                        @session.get("username")
+                        </a>
+                    </li>
+                    <li class="divider-vertical"></li>
+                    <li>
+                        <a href="@routes.UserController.logout()">
+                        @Messages("logout")
+                        </a>
+                    </li>
+                } else {
+                    <li class="divider-vertical"></li>
+                    <li>
+                        <a href="@routes.UserController.loginPage()">
+                        @Messages("login")
+                        </a>
+                    </li>
+                    <li class="divider-vertical"></li>
+                    <li>
+                        <a href="@routes.UserController.registerPage()">
+                        @Messages("register")
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</nav>
+    <script>
+        $(document).ready(function () {
+            getRate();
+            setInterval(getRate, 3000);
+            function getRate() {
+                $.get("/trades/lastPrice", function (data) {
+                    $("#rate-btc").text(data);
+                })
+            }
+
+        })
+    </script>

@@ -1,40 +1,71 @@
-@()(implicit messages: Messages, flash: Flash)
+@(loginForm: Form[LoginForm])(implicit messages: Messages, flash: Flash, session: Session)
 
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>@Messages("login") - @Messages("application.name")</title>
-        <link rel="stylesheet" type="text/css" media="screen"
-            href="@routes.Assets.versioned("stylesheets/bootstrap.css")">
-        <link rel="stylesheet" type="text/css" media="screen"
-        href="@routes.Assets.versioned("stylesheets/login.css")">
-    </head>
-    <body>
-        <div class="container">
-            <div class="row">
-                <div class="col-md-offset-3 col-md-6">
-                    <form class="form-horizontal">
-                        <span class="heading">User login</span>
-                        <div class="form-group">
-                            <input type="email" class="form-control" id="inputEmail3" placeholder="Username">
-                            <i class="fa fa-user"></i>
-                        </div>
-                        <div class="form-group help">
-                            <input type="password" class="form-control" id="inputPassword3" placeholder="Password">
-                            <i class="fa fa-lock"></i>
-                            <a href="#" class="fa fa-question-circle"></a>
-                        </div>
-                        <div class="form-group">
-                            <div class="main-checkbox">
-                                <input type="checkbox" value="None" id="checkbox1" name="check"/>
-                                <label for="checkbox1"></label>
+@main(Messages("login")) {
+
+    <div class="wrapper">
+        <div class="current">
+            <a href="/">@Messages("home")</a> &gt; @Messages("login")
+        </div>
+    </div>
+
+    <div class="wrapper">
+        <div class="login_page">
+            <div class="login_banner">
+                <img src="/assets/images/login.jpg" style="height: 300px;">
+            </div>
+            <div class="login_form">
+                <div class="body">
+                    <form class="form-horizontal" role="form" action="@routes.UserController.login()" method="post">
+                        <div class="form-group login-div">
+                            <span class="uin_icon"></span>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control text" id="username" placeholder="Enter username"
+                                name="username" value="">
                             </div>
-                            <span class="text">Remember me</span>
-                            <button type="submit" class="btn btn-default">Login</button>
+                        </div>
+                        <div class="form-group login-div">
+                            <span class="uin_icon uni2"></span>
+                            <div class="col-sm-10">
+                                <input type="password" class="form-control text" id="pwd" placeholder="Enter password"
+                                name="password" value="">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <button type="submit" id="login" class="btn btn-default submit">@Messages("login")</button>
+                            </div>
                         </div>
                     </form>
                 </div>
+                <div class="login-footer">
+                    <span style="float:right;margin-right:10px;">
+                        <a style="font-size:12px;" href="@routes.UserController.registerPage()">@Messages("register")</a>｜
+                        <a href="#" style="font-size:12px;">@Messages("forget-password")</a></span></div>
             </div>
         </div>
-    </body>
-</html>
+    </div>
+    <script>
+            $(document).ready(function () {
+                $(":submit[id=login]").click(function(check){
+                    var $username = $("#username");
+                    var $password = $("#pwd");
+                    if($username.val() === ""){
+                        alert("Please input the username.");
+                        $username.focus();
+                        check.preventDefault();
+                    } else if($password.val() === ""){
+                        alert("Please inout the password.");
+                        $password.focus();
+                        check.preventDefault();
+                    } else{
+                        // valid input
+                        // do md5
+                        var md5 = $.md5($password.val());
+                        $password.val(md5);
+                    }
+                    $("form").submit()
+                })
+            })
+    </script>
+
+}

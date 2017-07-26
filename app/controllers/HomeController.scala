@@ -1,9 +1,12 @@
 package controllers
 
+import java.sql.Timestamp
 import javax.inject._
 
-import dal.OrderRepository
+import dal.{OrderRepository, UserRepository}
+import models.Order
 import play.api._
+import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
@@ -13,7 +16,8 @@ import scala.concurrent.ExecutionContext
  * application's home page.
  */
 @Singleton
-class HomeController @Inject() (repo: OrderRepository) (implicit ec:ExecutionContext) extends Controller {
+class HomeController @Inject()(repo: OrderRepository, userRepo: UserRepository, val messagesApi: MessagesApi)(implicit ec:ExecutionContext)
+  extends Controller with I18nSupport{
 
   /**
    * Create an Action to render an HTML page.
@@ -23,6 +27,7 @@ class HomeController @Inject() (repo: OrderRepository) (implicit ec:ExecutionCon
    * a path of `/`.
    */
   def index = Action { implicit request =>
-    Redirect(routes.OrderController.list())
+
+    Ok(views.html.index())
   }
 }

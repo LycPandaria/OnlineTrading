@@ -1,1 +1,55 @@
-@()
+@(user: User)(implicit messages: Messages, flash: Flash, session: Session)
+@main(Messages("finance.gbp.withdrawal")){
+    <div class="page">
+        @financenavi()
+        <div class="main">
+            <div class="main_title" style="background: none;margin-bottom: 0;">
+                <div>@Messages("finance.gbp.withdrawal")</div>
+            </div>
+
+            <div class="withdrawal-box">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td style="text-align: right">@Messages("finance.gbp.balance")&nbsp;&nbsp;:&nbsp;&nbsp; </td>
+                            <td>@user.gbpBalance</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right">@Messages("withdrawal.amount")&nbsp;&nbsp;:&nbsp;&nbsp;</td>
+                            <td><input id="amount" name="amount" ></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <input style="button" type="submit" value="@Messages("button.confirm")" id="btn" class="submit btn">
+            </div>
+
+        </div>
+    </div>
+    <script>
+            $(document).ready(function () {
+                var $amount = $("#amount");
+                $amount.on("input propertychange", function () {
+                    var amount = $amount.val();
+                    if(isNaN(amount)){
+                        alert("Please input a number.");
+                        $(this).val("");
+                        $(this).focus();
+                    }
+                });
+                $("#btn").click(function () {
+                    var amount = $amount.val();
+                    if(amount === ""){
+                        alert("Please input an amount.");
+                        $amount.focus();
+                    }else if(amount > @user.gbpBalance) {
+                        alert("@Messages("withdrawal.error.not.enough")");
+                        $amount.focus();
+                    }
+                    else {
+                        window.location.href = '/finance/gbp/withdrawal/' + amount
+                    }
+                })
+            })
+    </script>
+}
+

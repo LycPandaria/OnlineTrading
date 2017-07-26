@@ -1,11 +1,58 @@
 # https://www.playframework.com/documentation/latest/ScalaI18N
 application.name = Online Trading Platform
 
-orders.list.navigation = List
+login = Login in
+login.inputError = Input error.
+login.welcome = Welcome, {0}!
+login.error = No such user.
+logout = Logout
+
+register = Register
+register.validation.error = Errors in the register information.
+register.validation.duplicate = This username has been used.
+
 orders.new = (new)
 orders.new.command = New
 orders.new.title = New Order
 orders.new.submit = Add
 orders.new.success = Successfully added.
+orders.manage = Order Manage
+orders.userorders = My Orders
+orders.marketorder = Market Order
+orders.limitorder = Limit Order
+orders.not.enough.gbp = Your GBP Balance is not enough.
+orders.not.enough.btc = Your BTC Balance is not enough.
+
+validation.errors = Errors in order information.
+
+trades.center = Trade Center
+trades.list = List Trades
+trades.usertrades = My Trades History
+
+home = Home
+forget-password = Forget Password ?
+topup = Topup
+currency = Currency
+balance = Balance
+reserved = Reserved
+btc = BitCoin
+gbp = British Pound
+
+finance.index = Finance Channel
+finance.gbp.deposit = GBP Deposit
+finance.gbp.withdrawal = GBP Withdrawal
+finance.gbp.balance = GBP Balance
+finance.btc.deposit = BTC Deposit
+finance.btc.withdrawal = BTC Withdrawal
+finance.btc.balance = BTC Balance
+withdrawal.amount = Withdrawal Amount
+withdrawal.error.not.enough = Withdrawal amount greater than balance.
+withdrawal.success = Withdrawal successfully!
+
+button.confirm = Confirm
+
+
+
+
 
 
