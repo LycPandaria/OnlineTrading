@@ -9,13 +9,12 @@ import javax.inject._
 import dal.UserRepository
 import models.{LoginForm, RegisterForm, User}
 import util.AuthUtil
-
 import play.api.i18n.{I18nSupport, Messages, MessagesApi}
 import play.api.data.Form
 import play.api.data.Forms._
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future, blocking}
 
 @Singleton
 class UserController @Inject()(val messagesApi: MessagesApi, repo: UserRepository, authUtil: AuthUtil)
@@ -222,6 +221,13 @@ class UserController @Inject()(val messagesApi: MessagesApi, repo: UserRepositor
         }
   }
 
+  def updateTest(x: Double) = Action{
+    blocking{
+      this.synchronized {
+        Ok(Await.result(repo.updateTest(x), Duration.Inf).toString)
+      }
+    }
+  }
 
   // Authentication
   def Authenticated(f: => User => Request[AnyContent] => Future[Result]) = Action.async{

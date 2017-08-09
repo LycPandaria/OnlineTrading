@@ -231,7 +231,7 @@
                     })
                 }
                 function getTickers() {
-                    $.getJSON("/ajax/tickers", function (data) {
+                    $.getJSON("/ajax/tickers?limit=6", function (data) {
                         var buys = data.buys;
                         var sells = data.sells;
                         var buyhtml = "", sellhtml = "";
@@ -256,12 +256,13 @@
                                 w = "100%";
                             else
                                 w = w + "%";
-                            sellhtml += '<tr>' +
+                            var line = '<tr>' +
                                     '<td style="width:60px;">' + 'Sell(' + i + ')' + '</td>' +
                                     '<td style="width:60px;">' + '£' + order.price + '</td>' +
                                     '<td style="width:80px;">' + order.amount + '</td>' +
                                     '<td>' + '<div class="bar" style="float: left; width: ' + w + '"></div>' + '</td>' +
                                     '</tr>';
+                            sellhtml = line + sellhtml;
                         }
                         $("#buylist").html(buyhtml);
                         $("#salelist").html(sellhtml);

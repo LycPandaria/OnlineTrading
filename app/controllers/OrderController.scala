@@ -9,7 +9,7 @@ import play.api.mvc._
 import play.api.i18n.{I18nSupport, Messages, MessagesApi}
 import play.api.mvc.Flash
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import javax.inject._
 
 import dal.{OrderRepository, TradeRepository, UserRepository}
@@ -19,6 +19,8 @@ import play.api.data.Forms.{mapping, nonEmptyText, of}
 import play.api.data.format.Formats.doubleFormat
 import play.api.libs.json.Json
 import util.AuthUtil
+
+import scala.concurrent.duration.Duration
 
 @Singleton
 class OrderController @Inject()(repo: OrderRepository, userRepo: UserRepository, tradeRepo: TradeRepository,
@@ -44,8 +46,8 @@ class OrderController @Inject()(repo: OrderRepository, userRepo: UserRepository,
     val all = for {
       // get two Seq[OrderForm], contain (tradetype, price, total_amount)
       // total_amount is a sum of amount in different orders with same price
-      buys <- repo.listCombinedOrders(TRADETYPE_BUY)
-      sells <- repo.listCombinedOrders(TRADETYPE_SELL)
+      buys <- repo.listCombinedOrders(TRADETYPE_BUY, 20)
+      sells <- repo.listCombinedOrders(TRADETYPE_SELL, 20)
       trades <- tradeRepo.list()
     } yield (buys, sells, trades)
 
@@ -55,10 +57,10 @@ class OrderController @Inject()(repo: OrderRepository, userRepo: UserRepository,
     }
   }
 
-  def ajaxTickers = Action.async{
+  def ajaxTickers(limit: Int) = Action.async{
     val tickers = for{
-      buys <- repo.listCombinedOrders(TRADETYPE_BUY)
-      sells <- repo.listCombinedOrders(TRADETYPE_SELL)
+      buys <- repo.listCombinedOrders(TRADETYPE_BUY, limit)
+      sells <- repo.listCombinedOrders(TRADETYPE_SELL, limit)
     } yield (buys, sells)
     tickers.map{
       case (buys, sells) =>
@@ -111,13 +113,13 @@ class OrderController @Inject()(repo: OrderRepository, userRepo: UserRepository,
         val order = Order(0,new Timestamp(System.currentTimeMillis()), newOrderForm.tradetype,
           newOrderForm.price, newOrderForm.amount, newOrderForm.amount,STATUS_OPEN, user.id, LIMIT)
         // add to DB
-        repo.add(order).map{
+        repo.add(order) match {
           case SUCCESS =>
             val message = Messages("orders.new.success")
-            Redirect(routes.OrderController.newOrder()).flashing("success" -> message)
+            Future.successful(Redirect(routes.OrderController.newOrder()).flashing("success" -> message))
           case code =>
             println("ERROR:" + code)
-            Redirect(routes.OrderController.newOrder()).flashing("error" -> "System error.")
+            Future.successful(Redirect(routes.OrderController.newOrder()).flashing("error" -> "System error."))
         }
       }
     )
@@ -172,21 +174,23 @@ class OrderController @Inject()(repo: OrderRepository, userRepo: UserRepository,
     * @param amount
     * @param price
     */
-  def apiNewLimitOrder(uid: Long, tradeType: String, amount: Double, price: Double) = Action.async{
+  def apiNewLimitOrder(uid: Long, tradeType: String, amount: Double, price: Double) = Action{
     val order = Order(0,new Timestamp(System.currentTimeMillis()), tradeType, price, amount, amount,STATUS_OPEN, uid, LIMIT)
-    repo.add(order).map{
-      case SUCCESS => Ok("success")
-      case error => Ok("fail")
-    }
+      repo.add(order) match {
+        case SUCCESS => Ok("success")
+        case error => Ok("fail")
+      }
   }
 
-  def apiNewMarketOrder(uid: Long, tradeType: String, amount: Double) = Action.async{
-    val marketOrder = Order(0,new Timestamp(System.currentTimeMillis()), tradeType, -1.0, amount, amount, "close",
+  def apiNewMarketOrder(uid: Long, tradeType: String, amount: Double) = Action.async {
+    val marketOrder = Order(0, new Timestamp(System.currentTimeMillis()), tradeType, -1.0, amount, amount, "close",
       uid, "market")
-    repo.newMarketOrder(marketOrder).map{
-      case SUCCESS => Ok("success")
-      case error => Ok("fail")
-    }
+
+      repo.newMarketOrder(marketOrder).map {
+        case SUCCESS => Ok("success")
+        case error => Ok("fail")
+      }
+
   }
 
   private val orderForm: Form[OrderForm] = Form(

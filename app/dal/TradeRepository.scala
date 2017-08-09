@@ -28,8 +28,10 @@ class TradeRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implic
     def tradeType = column[String]("trade_type")
     def traderId = column[Long]("trader_id")
     def tradeeId = column[Long]("tradee_id")
+    def orderId = column[Long]("initiator_order_id")
+    def orderTradeWithId = column[Long]("trade_order_id")
 
-    def * = (id, timestamp, tradePrice, amount,total, tradeType, traderId, tradeeId) <> ((Trade.apply _).tupled, Trade.unapply)
+    def * = (id, timestamp, tradePrice, amount,total, tradeType, traderId, tradeeId, orderId, orderTradeWithId) <> ((Trade.apply _).tupled, Trade.unapply)
   }
 
   val NO_SUCH_USER = 2

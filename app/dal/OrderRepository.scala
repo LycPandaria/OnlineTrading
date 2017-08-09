@@ -9,7 +9,7 @@ import models.{Order, OrderForm, Trade, User}
 import util.Calculator
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, blocking}
 
 /**
   * A repository for order
@@ -76,7 +76,7 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
   /**
     * group price into (tradetype = 'buy', price, total_amount)
     */
-  def listCombinedOrders(tradetype: String): Future[Seq[OrderForm]] = {
+  def listCombinedOrders(tradetype: String, limit: Int): Future[Seq[OrderForm]] = {
     tradetype match{
       case BUY => db.run {
         /* this query is equal to
@@ -94,7 +94,7 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
         query.result.map{
           seq =>  // type of seq: Seq[(String, Double, Option[Double])]
             // turn this into a Seq[OrderForm]
-            seq.map( data => OrderForm(BUY, data._2, data._3.get))
+            seq.map( data => OrderForm(BUY, data._2, Calculator.toFixed(data._3.get))).take(limit)
         }
       } // end of BUY
       case SELL => db.run {
@@ -113,7 +113,7 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
         query.result.map{
           seq =>  // type of seq: Seq[(String, Double, Option[Double])]
             // turn this into a Seq[OrderForm]
-            seq.map( data => OrderForm(SELL, data._2, data._3.get))
+            seq.map( data => OrderForm(SELL, data._2, Calculator.toFixed(data._3.get))).take(limit)
         }
       } // end of SELL
     } // end of match
@@ -180,6 +180,14 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
     }
   }
 
+  def addOrderToDBblocking(order: Order): Long = {
+    Await.result(db.run((orders returning orders.map(_.id)) += order).recover{
+      case ex: Exception =>
+        println(ex.getMessage)
+        0L
+    }, Duration.Inf)
+  }
+
   /**
     * update an existed order
     * @param order order to be updated
@@ -197,128 +205,92 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
     }
   }
 
-  def add(order: Order): Future[Int] = {
-    // add a new buy order
-    // search for suitable sell orders
-    userRepo.findById(order.uid).flatMap{
-      // if the user exists
-      case Some(user) =>
-        // check the balance
-        checkBalance(user, order) match {
-          case SUCCESS =>
-            findSuitableOrders(order).flatMap{
-              suitableOrders =>
-                if(suitableOrders.isEmpty){
-                  // if no suitable orders to trade with this order, add order to DB
-                  val all = for{
-                    id <- addOrderToDB(order)
-                    res <- userRepo.updateBalance(user, order)
-                  } yield (id, res)
-                  all.map{
-                    case (id, SUCCESS) =>
-                      if(id == 0L)
-                        FAIL
-                      else
-                        SUCCESS
-                    case (id, code) => code
-                  }
-                }
-                else{
-                  addOrderToDB(order).flatMap{
-                    id =>
-                      val orderToTrade = order.copy(id = id)
-                      // update user
-                      val all = for{
-                        update <- userRepo.updateBalance(user, order)
-                        res <- trade(orderToTrade, suitableOrders)
-                      } yield (update, res)
-                      all.flatMap{
-                        case (SUCCESS,SUCCESS) => Future.successful(SUCCESS)
-                        case (update, res) => Future.successful(update)
-                      }
-                  }
-                }
-            }
-          case errorcode => Future.successful(errorcode)
+  def add(order: Order): Int = {
+    blocking {
+      this.synchronized {
+        // add to order db and update user
+        userRepo.updateBalance(order.uid, order) match {
+          case 0L => FAIL
+          case id =>
+            val orderToTrade = order.copy(id = id)
+            trade(orderToTrade)
         }
-      case None => Future.successful(NO_SUCH_USER)
+      }
     }
   }
+
 
   /**
   select * from order
   where tradetype=order.tradetype and price <= order.price and status='open'
   order by price ASC, timestamp
    */
-  def findSuitableOrders(order: Order):Future[Seq[Order]] = {
-    order.tradetype match {
-      case BUY =>
-        val query = orders.filter(_.status === STATUS_OPEN).filter(_.tradetype === SELL).filter(_.price <= order.price)
-          .sortBy(row => (row.price.asc, row.timestamp))
+  def findSuitableOrders(order: Order):Seq[Order] = {
+      order.tradetype match {
+        case BUY =>
+          val query = orders.filter(_.status === STATUS_OPEN).filter(_.tradetype === SELL).filter(_.price <= order.price)
+            .sortBy(row => (row.price.asc, row.timestamp))
 
-        db.run(query.result).map{
-          list =>
-            // these code will filter some orders
-            // if some one want to buy amount=0.1 and the first suitable's amount = 0.2, this function will only return
-            // the first order as suitable. otherwise, function will continue to next order
-            var amount: Double = 0.0
-            var x: Seq[Order] = Seq()
-            for(o <- list){
-              if(amount < order.amount){
-                amount+=o.outstanding
-                x = x :+ o
+          Await.result(db.run(query.result).map {
+            list =>
+              // these code will filter some orders
+              // if some one want to buy amount=0.1 and the first suitable's amount = 0.2, this function will only return
+              // the first order as suitable. otherwise, function will continue to next order
+              var amount: Double = 0.0
+              var x: Seq[Order] = Seq()
+              for (o <- list) {
+                if (amount < order.amount) {
+                  amount += o.outstanding
+                  x = x :+ o
+                }
               }
-            }
-            x
-        }
-      case SELL =>
-        val query = orders.filter(_.status === STATUS_OPEN).filter(_.tradetype === BUY).filter(_.price >= order.price)
-          .sortBy(row => (row.price.desc, row.timestamp))
-        db.run(query.result).map{
-          list =>
-            // these code will filter some orders
-            // if some one want to buy amount=0.1 and the first suitable's amount = 0.2, this function will only return
-            // the first order as suitable. otherwise, function will continue to next order
-            var amount: Double = 0.0
-            var x: Seq[Order] = Seq()
-            for(o <- list){
-              if(amount < order.amount){
-                amount+=o.outstanding
-                x = x :+ o
+              x
+          }, Duration.Inf)
+        case SELL =>
+          val query = orders.filter(_.status === STATUS_OPEN).filter(_.tradetype === BUY).filter(_.price >= order.price)
+            .sortBy(row => (row.price.desc, row.timestamp))
+          Await.result(db.run(query.result).map {
+            list =>
+              // these code will filter some orders
+              // if some one want to buy amount=0.1 and the first suitable's amount = 0.2, this function will only return
+              // the first order as suitable. otherwise, function will continue to next order
+              var amount: Double = 0.0
+              var x: Seq[Order] = Seq()
+              for (o <- list) {
+                if (amount < order.amount) {
+                  amount += o.outstanding
+                  x = x :+ o
+                }
               }
-            }
-            x
-        }
-    }
+              x
+          }, Duration.Inf)
+      }
+
   }
 
 
   /**
     * Doing a trade action between a new order with suitable orders
     * @param order  the new order
-    * @param ordersToTrade orders which are suitable to trade with the new order
+    *
     */
-  def trade(order: Order, ordersToTrade: Seq[Order]): Future[Int] = {
-    var code = SUCCESS
-    // trade one by one
-    ordersToTrade.foreach{
-      o =>
-        val trade =
-          for{
-            trader <- userRepo.findById(order.uid)
-            orderToTrade <-  findById(order.id)
-            tradee <- userRepo.findById(o.uid)
-            res <- tradeWithOneOrder(trader.get, orderToTrade.get, tradee.get, o)
-          } yield res
+  def trade(order: Order): Int = {
+    val ordersToTrade = findSuitableOrders(order)
+      var code = SUCCESS
+      // trade one by one
+      ordersToTrade.foreach {
+        o =>
+          val trade =
+            for {
+              trader <- userRepo.findById(order.uid)
+              orderToTrade <- findById(order.id)
+              tradee <- userRepo.findById(o.uid)
+              res <- tradeWithOneOrder(trader.get, orderToTrade.get, tradee.get, o)
+            } yield res
+          code = Await.result(trade, Duration.Inf)
+      }
+      code
 
-        code = Await.result(trade, Duration.Inf)
-        /*
-        trade.map{
-          case FAIL => code = FAIL
-        }
-        */
-    }
-    Future.successful(code)
   }
 
 
@@ -355,203 +327,211 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
     * @return
     */
   def tradeWithOneOrder(trader: User, order: Order, tradee: User, orderTradeWith: Order): Future[Int] = {
-    var midPrice, diffPrice, total, refund, amount = 0.0
-    println(System.currentTimeMillis())
-    order.tradetype match {
-      case BUY =>
-        if (order.outstanding >= orderTradeWith.outstanding) {
-          midPrice = Calculator.midprice(order.price, orderTradeWith.price) // mid price
-          diffPrice = Calculator.sub(order.price, midPrice).abs
-          amount = orderTradeWith.outstanding
-          total = Calculator.toFixed(Calculator.multi(midPrice, amount))
-          refund = Calculator.toFixed(Calculator.multi(diffPrice, amount))
+      var midPrice, diffPrice, total, refund, amount = 0.0
+      order.tradetype match {
+        case BUY =>
+          if (order.outstanding >= orderTradeWith.outstanding) {
+            midPrice = Calculator.midprice(order.price, orderTradeWith.price) // mid price
+            diffPrice = Calculator.sub(order.price, midPrice).abs
+            amount = orderTradeWith.outstanding
+            total = Calculator.toFixed(Calculator.multi(midPrice, amount))
+            refund = Calculator.toFixed(Calculator.multi(diffPrice, amount))
 
-          // update user
-          val traderGBPB = Calculator.add(trader.gbpBalance, refund)
-          val traderGBPR = Calculator.sub(trader.gbpReserved, Calculator.add(total, refund))
-          val tradeeGBPB = Calculator.add(tradee.gbpBalance, total)
-          val traderBTCB = Calculator.add(trader.btcBalance, amount)
-          val tradeeBTCR = Calculator.sub(tradee.btcReserved, amount)
+            // update user
+            val traderGBPB = Calculator.add(trader.gbpBalance, refund)
+            val traderGBPR = Calculator.sub(trader.gbpReserved, Calculator.add(total, refund))
+            val tradeeGBPB = Calculator.add(tradee.gbpBalance, total)
+            val traderBTCB = Calculator.add(trader.btcBalance, amount)
+            val tradeeBTCR = Calculator.sub(tradee.btcReserved, amount)
 
-          val traderUpdate =
-            if(trader.id == tradee.id)
-              trader.copy(gbpBalance = Calculator.add(tradeeGBPB, refund), gbpReserved = traderGBPR,
-                btcBalance = traderBTCB, btcReserved = tradeeBTCR)
-            else
-              trader.copy(gbpBalance = traderGBPB, gbpReserved = traderGBPR, btcBalance = traderBTCB)
-          val tradeeUpdate =
-            if(trader.id == tradee.id)
-              traderUpdate
-            else
-              tradee.copy(gbpBalance = tradeeGBPB, btcReserved = tradeeBTCR)
+            val traderUpdate =
+              if (trader.id == tradee.id)
+                trader.copy(gbpBalance = Calculator.add(tradeeGBPB, refund), gbpReserved = traderGBPR,
+                  btcBalance = traderBTCB, btcReserved = tradeeBTCR)
+              else
+                trader.copy(gbpBalance = traderGBPB, gbpReserved = traderGBPR, btcBalance = traderBTCB)
+            val tradeeUpdate =
+              if (trader.id == tradee.id)
+                traderUpdate
+              else
+                tradee.copy(gbpBalance = tradeeGBPB, btcReserved = tradeeBTCR)
 
-          // update order
-          val tradedOrder = orderTradeWith.copy(outstanding = 0.0, status = STATUS_CLOSED)
-          val orderWithNewStatus =
-            Calculator.sub(order.outstanding, amount) match {
+            // update order
+            val tradedOrder = orderTradeWith.copy(outstanding = 0.0, status = STATUS_CLOSED)
+            val orderWithNewStatus =
+              Calculator.sub(order.outstanding, amount) match {
+                case 0.0 => order.copy(outstanding = 0.0, status = STATUS_CLOSED)
+                case left => order.copy(outstanding = left)
+              }
+            val update = for {
+            //update to database
+              res1 <- userRepo.update(traderUpdate)
+              res2 <- userRepo.update(tradeeUpdate)
+              res3 <- updateOrderToDB(tradedOrder)
+              res4 <- updateOrderToDB(orderWithNewStatus)
+            } yield (res1, res2, res3, res4)
+            val result = Await.result(update, Duration.Inf)
+            result match {
+              case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
+                // add a new trade record to database
+                val trade = Trade(0, new Timestamp(System.currentTimeMillis()), midPrice, amount, total,
+                  order.tradetype, trader.id, tradee.id, order.id, orderTradeWith.id)
+                tradeRepo.add(trade)
+              case (_, _, _, _) => Future.successful(FAIL)
+            }
+            /*
+          update.flatMap{
+            case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
+              // add a new trade record to database
+              val trade = Trade(0, new Timestamp(System.currentTimeMillis()), midPrice, amount, total,
+                order.tradetype,trader.id, tradee.id)
+              tradeRepo.add(trade)
+            case (_, _, _, _) => Future.successful(FAIL)
+          }
+          */
+          } else { // orderTradeWith.outstanding > order.outstanding
+            midPrice = Calculator.midprice(order.price, orderTradeWith.price) // mid price
+            diffPrice = Calculator.sub(order.price, midPrice).abs
+            amount = order.outstanding
+            total = Calculator.toFixed(Calculator.multi(midPrice, amount))
+            refund = Calculator.toFixed(Calculator.multi(diffPrice, amount))
+
+            // update user
+            val traderGBPB = Calculator.add(trader.gbpBalance, refund)
+            val traderGBPR = Calculator.sub(trader.gbpReserved, Calculator.add(total, refund))
+            val tradeeGBPB = Calculator.add(tradee.gbpBalance, total)
+            val traderBTCB = Calculator.add(trader.btcBalance, amount)
+            val tradeeBTCR = Calculator.sub(tradee.btcReserved, amount)
+
+            val traderUpdate =
+              if (trader.id == tradee.id)
+                trader.copy(gbpBalance = Calculator.add(tradeeGBPB, refund), gbpReserved = traderGBPR,
+                  btcBalance = traderBTCB, btcReserved = tradeeBTCR)
+              else
+                trader.copy(gbpBalance = traderGBPB, gbpReserved = traderGBPR, btcBalance = traderBTCB)
+            val tradeeUpdate =
+              if (trader.id == tradee.id)
+                traderUpdate
+              else
+                tradee.copy(gbpBalance = tradeeGBPB, btcReserved = tradeeBTCR)
+
+            //update orders
+            val tradedOrder = orderTradeWith.copy(outstanding = Calculator.sub(orderTradeWith.outstanding, order.outstanding))
+            val orderWithNewStatus = order.copy(outstanding = 0.0, status = STATUS_CLOSED)
+            val update = for {
+            //update to database
+              res1 <- userRepo.update(traderUpdate)
+              res2 <- userRepo.update(tradeeUpdate)
+              res3 <- updateOrderToDB(tradedOrder)
+              res4 <- updateOrderToDB(orderWithNewStatus)
+            } yield (res1, res2, res3, res4)
+            val result = Await.result(update, Duration.Inf)
+            result match {
+              case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
+                // add a new trade record to database
+                val trade = Trade(0, new Timestamp(System.currentTimeMillis()), midPrice, amount, total,
+                  order.tradetype, trader.id, tradee.id, order.id, orderTradeWith.id)
+                tradeRepo.add(trade)
+              case (_, _, _, _) => Future.successful(FAIL)
+            }
+          }
+        case SELL =>
+          if (order.outstanding >= orderTradeWith.outstanding) {
+            midPrice = Calculator.midprice(order.price, orderTradeWith.price) // mid price
+            diffPrice = Calculator.sub(order.price, midPrice).abs
+            amount = orderTradeWith.outstanding
+            total = Calculator.toFixed(Calculator.multi(midPrice, amount))
+            refund = Calculator.toFixed(Calculator.multi(diffPrice, amount))
+
+            // update user
+            val traderGBPB = Calculator.add(trader.gbpBalance, total)
+            val traderBTCR = Calculator.sub(trader.btcReserved, amount)
+            val tradeeGBPR = Calculator.sub(tradee.gbpReserved, Calculator.add(total, refund))
+            val tradeeGBPB = Calculator.add(tradee.gbpBalance, refund)
+            val tradeeBTCB = Calculator.add(tradee.btcBalance, amount)
+
+            val traderUpdate =
+              if (trader.id == tradee.id)
+                trader.copy(gbpBalance = Calculator.add(traderGBPB, refund), gbpReserved = tradeeGBPR,
+                  btcBalance = tradeeBTCB, btcReserved = traderBTCR)
+              else
+                trader.copy(gbpBalance = traderGBPB, btcReserved = traderBTCR)
+            val tradeeUpdate =
+              if (trader.id == tradee.id)
+                traderUpdate
+              else
+                tradee.copy(gbpBalance = tradeeGBPB, gbpReserved = tradeeGBPR, btcBalance = tradeeBTCB)
+
+            // update order
+            val tradedOrder = orderTradeWith.copy(outstanding = 0.0, status = STATUS_CLOSED)
+            val orderWithNewStatus = Calculator.sub(order.outstanding, amount) match {
               case 0.0 => order.copy(outstanding = 0.0, status = STATUS_CLOSED)
               case left => order.copy(outstanding = left)
+            }
+            val update = for {
+            //update to database
+              res1 <- userRepo.update(traderUpdate)
+              res2 <- userRepo.update(tradeeUpdate)
+              res3 <- updateOrderToDB(tradedOrder)
+              res4 <- updateOrderToDB(orderWithNewStatus)
+            } yield (res1, res2, res3, res4)
+            val result = Await.result(update, Duration.Inf)
+            result match {
+              case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
+                // add a new trade record to database
+                val trade = Trade(0, new Timestamp(System.currentTimeMillis()), midPrice, amount, total,
+                  order.tradetype, trader.id, tradee.id, order.id, orderTradeWith.id)
+                tradeRepo.add(trade)
+              case (_, _, _, _) => Future.successful(FAIL)
+            }
+          } else { // orderTradeWith.outstanding > order.outstanding
+            midPrice = Calculator.midprice(order.price, orderTradeWith.price) // mid price
+            diffPrice = Calculator.sub(order.price, midPrice).abs
+            amount = order.outstanding
+            total = Calculator.toFixed(Calculator.multi(midPrice, amount))
+            refund = Calculator.toFixed(Calculator.multi(diffPrice, amount))
+
+            // update user
+            val traderGBPB = Calculator.add(trader.gbpBalance, total)
+            val traderBTCR = Calculator.sub(trader.btcReserved, amount)
+            val tradeeGBPR = Calculator.sub(tradee.gbpReserved, Calculator.add(total, refund))
+            val tradeeGBPB = Calculator.add(tradee.gbpBalance, refund)
+            val tradeeBTCB = Calculator.add(tradee.btcBalance, amount)
+
+            val traderUpdate =
+              if (trader.id == tradee.id)
+                trader.copy(gbpBalance = Calculator.add(traderGBPB, refund), gbpReserved = tradeeGBPR,
+                  btcBalance = tradeeBTCB, btcReserved = traderBTCR)
+              else
+                trader.copy(gbpBalance = traderGBPB, btcReserved = traderBTCR)
+            val tradeeUpdate =
+              if (trader.id == tradee.id)
+                traderUpdate
+              else
+                tradee.copy(gbpBalance = tradeeGBPB, gbpReserved = tradeeGBPR, btcBalance = tradeeBTCB)
+
+            //update orders
+            val tradedOrder = orderTradeWith.copy(outstanding = Calculator.sub(orderTradeWith.outstanding, order.outstanding))
+            val orderWithNewStatus = order.copy(outstanding = 0.0, status = STATUS_CLOSED)
+            val update = for {
+            //update to database
+              res1 <- userRepo.update(traderUpdate)
+              res2 <- userRepo.update(tradeeUpdate)
+              res3 <- updateOrderToDB(tradedOrder)
+              res4 <- updateOrderToDB(orderWithNewStatus)
+            } yield (res1, res2, res3, res4)
+            val result = Await.result(update, Duration.Inf)
+            result match {
+              case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
+                // add a new trade record to database
+                val trade = Trade(0, new Timestamp(System.currentTimeMillis()), midPrice, amount, total,
+                  order.tradetype, trader.id, tradee.id, order.id, orderTradeWith.id)
+                tradeRepo.add(trade)
+              case (_, _, _, _) => Future.successful(FAIL)
+            }
           }
+      }
 
-          val update = for {
-          //update to database
-            res1 <- userRepo.update(traderUpdate)
-            res2 <- userRepo.update(tradeeUpdate)
-            res3 <- updateOrderToDB(tradedOrder)
-            res4 <- updateOrderToDB(orderWithNewStatus)
-          } yield (res1, res2, res3, res4)
-          update.flatMap{
-            case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
-              // add a new trade record to database
-              val trade = Trade(0, new Timestamp(System.currentTimeMillis()), midPrice, amount, total,
-                order.tradetype,trader.id, tradee.id)
-              tradeRepo.add(trade)
-            case (_, _, _, _) => Future.successful(FAIL)
-          }
-        } else { // orderTradeWith.outstanding > order.outstanding
-          midPrice = Calculator.midprice(order.price, orderTradeWith.price) // mid price
-          diffPrice = Calculator.sub(order.price, midPrice).abs
-          amount = order.outstanding
-          total = Calculator.toFixed(Calculator.multi(midPrice, amount))
-          refund = Calculator.toFixed(Calculator.multi(diffPrice, amount))
-
-          // update user
-          val traderGBPB = Calculator.add(trader.gbpBalance, refund)
-          val traderGBPR = Calculator.sub(trader.gbpReserved, Calculator.add(total, refund))
-          val tradeeGBPB = Calculator.add(tradee.gbpBalance, total)
-          val traderBTCB = Calculator.add(trader.btcBalance, amount)
-          val tradeeBTCR = Calculator.sub(tradee.btcReserved, amount)
-
-          val traderUpdate =
-            if(trader.id == tradee.id)
-              trader.copy(gbpBalance = Calculator.add(tradeeGBPB, refund), gbpReserved = traderGBPR,
-                btcBalance = traderBTCB, btcReserved = tradeeBTCR)
-            else
-              trader.copy(gbpBalance = traderGBPB, gbpReserved = traderGBPR, btcBalance = traderBTCB)
-          val tradeeUpdate =
-            if(trader.id == tradee.id)
-              traderUpdate
-            else
-              tradee.copy(gbpBalance = tradeeGBPB, btcReserved = tradeeBTCR)
-
-          //update orders
-          val tradedOrder = orderTradeWith.copy(outstanding = Calculator.sub(orderTradeWith.outstanding, order.outstanding))
-          val orderWithNewStatus = order.copy(outstanding = 0.0, status = STATUS_CLOSED)
-
-          val update = for {
-          //update to database
-            res1 <- userRepo.update(traderUpdate)
-            res2 <- userRepo.update(tradeeUpdate)
-            res3 <- updateOrderToDB(tradedOrder)
-            res4 <- updateOrderToDB(orderWithNewStatus)
-          } yield (res1, res2, res3, res4)
-          update.flatMap{
-            case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
-              // add a new trade record to database
-              val trade = Trade(0, new Timestamp(System.currentTimeMillis()), midPrice, amount, total,
-                order.tradetype,trader.id, tradee.id)
-              tradeRepo.add(trade)
-            case (_, _, _, _) => Future.successful(FAIL)
-          }
-
-        }
-      case SELL =>
-        if (order.outstanding >= orderTradeWith.outstanding) {
-          midPrice = Calculator.midprice(order.price, orderTradeWith.price) // mid price
-          diffPrice = Calculator.sub(order.price, midPrice).abs
-          amount = orderTradeWith.outstanding
-          total = Calculator.toFixed(Calculator.multi(midPrice, amount))
-          refund = Calculator.toFixed(Calculator.multi(diffPrice, amount))
-
-          // update user
-          val traderGBPB = Calculator.add(trader.gbpBalance, total)
-          val traderBTCR = Calculator.sub(trader.btcReserved, amount)
-          val tradeeGBPR = Calculator.sub(tradee.gbpReserved, Calculator.add(total, refund))
-          val tradeeGBPB = Calculator.add(tradee.gbpBalance, refund)
-          val tradeeBTCB = Calculator.add(tradee.btcBalance, amount)
-
-          val traderUpdate =
-            if(trader.id == tradee.id)
-              trader.copy(gbpBalance = Calculator.add(traderGBPB, refund), gbpReserved = tradeeGBPR,
-                btcBalance = tradeeBTCB, btcReserved = traderBTCR)
-            else
-              trader.copy(gbpBalance = traderGBPB, btcReserved = traderBTCR)
-          val tradeeUpdate =
-            if(trader.id == tradee.id)
-              traderUpdate
-            else
-              tradee.copy(gbpBalance = tradeeGBPB, gbpReserved = tradeeGBPR, btcBalance = tradeeBTCB)
-
-          // update order
-          val tradedOrder = orderTradeWith.copy(outstanding = 0.0, status = STATUS_CLOSED)
-          val orderWithNewStatus = Calculator.sub(order.outstanding, amount) match {
-            case 0.0 => order.copy(outstanding = 0.0, status = STATUS_CLOSED)
-            case left => order.copy(outstanding = left)
-          }
-
-          val update = for {
-          //update to database
-            res1 <- userRepo.update(traderUpdate)
-            res2 <- userRepo.update(tradeeUpdate)
-            res3 <- updateOrderToDB(tradedOrder)
-            res4 <- updateOrderToDB(orderWithNewStatus)
-          } yield (res1, res2, res3, res4)
-          update.flatMap{
-            case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
-              // add a new trade record to database
-              val trade = Trade(0, new Timestamp(System.currentTimeMillis()), midPrice, amount, total,
-                order.tradetype,trader.id, tradee.id)
-              tradeRepo.add(trade)
-            case (_, _, _, _) => Future.successful(FAIL)
-          }
-
-        }else { // orderTradeWith.outstanding > order.outstanding
-          midPrice = Calculator.midprice(order.price, orderTradeWith.price) // mid price
-          diffPrice = Calculator.sub(order.price, midPrice).abs
-          amount = order.outstanding
-          total = Calculator.toFixed(Calculator.multi(midPrice, amount))
-          refund = Calculator.toFixed(Calculator.multi(diffPrice, amount))
-
-          // update user
-          val traderGBPB = Calculator.add(trader.gbpBalance, total)
-          val traderBTCR = Calculator.sub(trader.btcReserved, amount)
-          val tradeeGBPR = Calculator.sub(tradee.gbpReserved, Calculator.add(total, refund))
-          val tradeeGBPB = Calculator.add(tradee.gbpBalance, refund)
-          val tradeeBTCB = Calculator.add(tradee.btcBalance, amount)
-
-          val traderUpdate =
-            if(trader.id == tradee.id)
-              trader.copy(gbpBalance = Calculator.add(traderGBPB, refund), gbpReserved = tradeeGBPR,
-                btcBalance = tradeeBTCB, btcReserved = traderBTCR)
-            else
-              trader.copy(gbpBalance = traderGBPB, btcReserved = traderBTCR)
-          val tradeeUpdate =
-            if(trader.id == tradee.id)
-              traderUpdate
-            else
-              tradee.copy(gbpBalance = tradeeGBPB, gbpReserved = tradeeGBPR, btcBalance = tradeeBTCB)
-
-          //update orders
-          val tradedOrder = orderTradeWith.copy(outstanding = Calculator.sub(orderTradeWith.outstanding, order.outstanding))
-          val orderWithNewStatus =order.copy(outstanding = 0.0, status = STATUS_CLOSED)
-
-          val update = for {
-          //update to database
-            res1 <- userRepo.update(traderUpdate)
-            res2 <- userRepo.update(tradeeUpdate)
-            res3 <- updateOrderToDB(tradedOrder)
-            res4 <- updateOrderToDB(orderWithNewStatus)
-          } yield (res1, res2, res3, res4)
-          update.flatMap{
-            case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
-              // add a new trade record to database
-              val trade = Trade(0, new Timestamp(System.currentTimeMillis()), midPrice, amount, total,
-                order.tradetype,trader.id, tradee.id)
-              tradeRepo.add(trade)
-            case (_, _, _, _) => Future.successful(FAIL)
-          }
-        }
-    }
   }
 
 
@@ -650,7 +630,6 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
   }
 
   def marketOrderTrade(morder: Order, order: Order, trader: User, tradee: User): Future[Int] = {
-    println("trade")
     val os =
       if(morder.outstanding > order.outstanding)
         Calculator.sub(morder.outstanding, order.outstanding)
@@ -704,7 +683,7 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
             case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
               // success, add a trade log
               val trade = Trade(0, new Timestamp(System.currentTimeMillis()), order.price, amount, sum,
-                order.tradetype,trader.id, tradee.id)
+                order.tradetype,trader.id, tradee.id, morder.id, order.id)
               tradeRepo.add(trade)
             case (_, _, _, _) => Future.successful(FAIL)
           }
@@ -752,7 +731,7 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
             case (SUCCESS, SUCCESS, SUCCESS, SUCCESS) =>
               // success, add a trade log
               val trade = Trade(0, new Timestamp(System.currentTimeMillis()), order.price, amount, sum,
-                order.tradetype,trader.id, tradee.id)
+                order.tradetype,trader.id, tradee.id, morder.id, order.id)
               tradeRepo.add(trade)
             case (_, _, _, _) => Future.successful(FAIL)
           }
