@@ -32,6 +32,7 @@
           <caption>Buy Orders</caption>
           <tr>
             <th>&nbsp;</th>
+            <th  align="left">Total</th>
             <th  align="left">Type</th>
             <th  align="left">Amount</th>
             <th  align="left">Price</th>
@@ -55,6 +56,7 @@
             <th align="left">Price</th>
             <th align="left">Amount</th>
             <th align="left">Type</th>
+            <th align="left">Total</th>
             <th>&nbsp;</th>
           </tr>
         </table>
@@ -127,16 +129,19 @@
           $.getJSON("/ajax/tickers", function (data) {
             var buys = data.buys;
             var sells = data.sells;
-            var buyhtml, sellhtml = "";
+            var buyhtml = "";
+            var sellhtml = "";
+            var buy_acc = 0.0;
+            var sell_acc= 0.0;
+            var width = "";
             for(var i in buys){
-                var order = buys[i];
-                var w = order.amount*20;
-                if(w > 100)
-                    w = "100%";
-                else
-                    w = w + "%";
-                buyhtml += '<tr>' +
-                        '<td>' + '<div class="bar" style="float: right; width: ' + w + '"></div>' + '</td>' +
+              var order = buys[i];
+              buy_acc+=order.amount;
+              if(buy_acc > 20) width = "100%";
+              else width =  buy_acc*5 + "%";
+              buyhtml += '<tr>' +
+                        '<td>' + '<div class="bar" style="float: right; width: ' + width + '"></div>' + '</td>' +
+                        '<td>' + buy_acc.toFixed(2) + '</td>'+
                         '<td>' + 'Buy' + '</td>' +
                         '<td>' + order.amount + '</td>' +
                         '<td>' + '£' + order.price + '</td>' +
@@ -144,16 +149,15 @@
             }
             for(var i in sells){
               var order = sells[i];
-              var w = order.amount*20;
-              if(w > 100)
-                w = "100%";
-              else
-                w = w + "%";
+              sell_acc+=order.amount;
+              if(sell_acc > 20) width = "100%";
+              else width = sell_acc*5 + "%";
               sellhtml += '<tr>' +
                       '<td>' + '£' + order.price + '</td>' +
                       '<td>' + order.amount + '</td>' +
                       '<td>' + 'Sell' + '</td>' +
-                      '<td>' + '<div class="bar" style="float: left; width: ' + w + '"></div>' + '</td>' +
+                      '<td>' + sell_acc.toFixed(2) + '</td>'+
+                      '<td>' + '<div class="bar" style="float: left; width: ' + width + '"></div>' + '</td>' +
                       '</tr>';
             }
             $("#buylist").html(buyhtml);

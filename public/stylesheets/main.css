@@ -261,7 +261,7 @@ dt { clear: right; }
 .trade_list .item table{border: #eee solid 1px; width: 435px}
 .trade_list .item caption {padding: 10px 0 10px 0; font-size: 16px; text-align: left}
 .trade_list .item th,
-.trade_list .item td {padding: 5px 14px; width: 25%}
+.trade_list .item td {padding: 5px 14px; width: 20%}
 .trade_list .item #buylist .bar{background-color:#669900; height: 28px}
 .trade_list .item #salelist .bar{background-color:#cc0000; height: 28px}
 .trade_list .item th{  background: #f7f6f2; border-bottom: #d5d5d5 solid 1px;}
@@ -505,11 +505,12 @@ dt { clear: right; }
     float: left;
     display: inline-block;
     padding-left: 10px;
+    padding-right: 10px;
     font-size: 12px;
 }
-.title .first {  width: 80px;  }
-.title .second{ width: 60px}
-.title .last{ width: 80px}
+.title .first {  width: 50px;  }
+.title .second{ width: 40px}
+.title .last{ width: 40px}
 
 /* Orders and Trade history Tab */
 .tab_box {

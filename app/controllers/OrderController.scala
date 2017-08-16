@@ -175,10 +175,13 @@ class OrderController @Inject()(repo: OrderRepository, userRepo: UserRepository,
     * @param price
     */
   def apiNewLimitOrder(uid: Long, tradeType: String, amount: Double, price: Double) = Action{
+
     val order = Order(0,new Timestamp(System.currentTimeMillis()), tradeType, price, amount, amount,STATUS_OPEN, uid, LIMIT)
       repo.add(order) match {
-        case SUCCESS => Ok("success")
-        case error => Ok("fail")
+        case SUCCESS =>
+          Ok("success")
+        case error =>
+          Ok("fail")
       }
   }
 

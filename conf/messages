@@ -25,7 +25,7 @@ orders.not.enough.btc = Your BTC Balance is not enough.
 
 validation.errors = Errors in order information.
 
-trades.center = Trade Center
+trades.center = Trade Centre
 trades.list = List Trades
 trades.usertrades = My Trades History
 
@@ -38,7 +38,7 @@ reserved = Reserved
 btc = BitCoin
 gbp = British Pound
 
-finance.index = Finance Channel
+finance.index = Finance Tab
 finance.gbp.deposit = GBP Deposit
 finance.gbp.withdrawal = GBP Withdrawal
 finance.gbp.balance = GBP Balance

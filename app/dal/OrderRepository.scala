@@ -226,6 +226,8 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
   order by price ASC, timestamp
    */
   def findSuitableOrders(order: Order):Seq[Order] = {
+    import scala.util.control._
+    val loop=new Breaks
       order.tradetype match {
         case BUY =>
           val query = orders.filter(_.status === STATUS_OPEN).filter(_.tradetype === SELL).filter(_.price <= order.price)
@@ -238,10 +240,14 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
               // the first order as suitable. otherwise, function will continue to next order
               var amount: Double = 0.0
               var x: Seq[Order] = Seq()
-              for (o <- list) {
-                if (amount < order.amount) {
-                  amount += o.outstanding
-                  x = x :+ o
+              loop.breakable{
+                for (o <- list) {
+                  if (amount < order.amount) {
+                    amount += o.outstanding
+                    x = x :+ o
+                  }
+                  else
+                    loop.break
                 }
               }
               x
@@ -256,10 +262,14 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
               // the first order as suitable. otherwise, function will continue to next order
               var amount: Double = 0.0
               var x: Seq[Order] = Seq()
-              for (o <- list) {
-                if (amount < order.amount) {
-                  amount += o.outstanding
-                  x = x :+ o
+              loop.breakable{
+                for (o <- list) {
+                  if (amount < order.amount) {
+                    amount += o.outstanding
+                    x = x :+ o
+                  }
+                  else
+                    loop.break
                 }
               }
               x
@@ -620,7 +630,7 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
                     trader <- userRepo.findById(morder.uid)
                     tradee <- userRepo.findById(order.uid)
                     mOrder <- findById(morderWithId.id)
-                    res <- marketOrderTrade(morderWithId, order, trader.get, tradee.get)
+                    res <- marketOrderTrade(mOrder.get, order, trader.get, tradee.get)
                   } yield res
                 code = Await.result(update, Duration.Inf)
             }
@@ -661,7 +671,7 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
 
             // update order
             val tradedOrder =
-              if(morder.outstanding > order.outstanding)
+              if(morder.outstanding >= order.outstanding)
                 order.copy(outstanding = 0.0, status = STATUS_CLOSED)
               else
                 order.copy(outstanding = os)
@@ -709,7 +719,7 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
 
           // update order
           val tradedOrder =
-            if(morder.outstanding > order.outstanding)
+            if(morder.outstanding >= order.outstanding)
               order.copy(outstanding = 0.0, status = STATUS_CLOSED)
             else
               order.copy(outstanding = os)
@@ -739,5 +749,6 @@ class OrderRepository @Inject() (userRepo: UserRepository, tradeRepo: TradeRepos
           Future.successful(NOT_ENOUGH_BTC_BALANCE)
     }
   }
+
 }
 

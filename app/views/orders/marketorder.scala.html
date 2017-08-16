@@ -78,6 +78,7 @@
                             <span class="first">Buy/Sell</span>
                             <span class="second">Price</span>
                             <span class="last">Amount</span>
+                            <span class="last">Total</span>
                         </div>
                         <table width="300" border="0" cellpadding="0" cellspacing="0" style="border-top: none;background: white;">
                             <tbody id="buylist">
@@ -183,7 +184,7 @@
                         $amount.focus();
                         return false;
                     }
-                    if(isNaN(sum)){
+                    if(!isNaN(sum)){
                         alert("Sorry, we currently do not have orders to trade.");
                         return false;
                     }else if(sum > gbpBalance){
@@ -235,32 +236,34 @@
                         var buys = data.buys;
                         var sells = data.sells;
                         var buyhtml = "", sellhtml = "";
+                        var sell_acc = 0.0;
+                        var buy_acc = 0.0;
                         for(var i in buys){
                             var order = buys[i];
-                            var w = order.amount*20;
-                            if(w > 100)
-                                w = "100%";
-                            else
-                                w = w + "%";
+                            var width = "";
+                            buy_acc+=order.amount;
+                            if(buy_acc > 10) width = "100%";
+                            else width =  buy_acc*10 + "%";
                             buyhtml += '<tr>' +
-                                    '<td style="width: 60px">' + 'Buy(' + i  + ')' + '</td>' +
-                                    '<td style="width: 60px">' + '£' + order.price + '</td>' +
-                                    '<td style="width: 80px">' + order.amount + '</td>' +
-                                    '<td>' + '<div class="bar" style="float: left; width: ' + w + '"></div>' + '</td>' +
+                                    '<td style="width: 20%">' + 'Buy(' + i  + ')' + '</td>' +
+                                    '<td style="width: 20%">' + '£' + order.price + '</td>' +
+                                    '<td style="width: 20%">' + order.amount + '</td>' +
+                                    '<td style="width: 20%">' + buy_acc.toFixed(2) + '</td>' +
+                                    '<td style="width: 20%">' + '<div class="bar" style="float: left; width: ' + width + '"></div>' + '</td>' +
                                     '</tr>';
                         }
                         for(var i in sells){
                             var order = sells[i];
-                            var w = order.amount*20;
-                            if(w > 100)
-                                w = "100%";
-                            else
-                                w = w + "%";
+                            var width = "";
+                            sell_acc+=order.amount;
+                            if(sell_acc > 10) width = "100%";
+                            else width = sell_acc*10 + "%";
                             var line = '<tr>' +
-                                    '<td style="width:60px;">' + 'Sell(' + i + ')' + '</td>' +
-                                    '<td style="width:60px;">' + '£' + order.price + '</td>' +
-                                    '<td style="width:80px;">' + order.amount + '</td>' +
-                                    '<td>' + '<div class="bar" style="float: left; width: ' + w + '"></div>' + '</td>' +
+                                    '<td style="width: 20%">' + 'Sell(' + i + ')' + '</td>' +
+                                    '<td style="width: 20%">' + '£' + order.price + '</td>' +
+                                    '<td style="width: 20%">' + order.amount + '</td>' +
+                                    '<td style="width: 20%">' + sell_acc.toFixed(2) + '</td>' +
+                                    '<td style="width: 20%">' + '<div class="bar" style="float: left; width: ' + width + '"></div>' + '</td>' +
                                     '</tr>';
                             sellhtml = line + sellhtml;
                         }

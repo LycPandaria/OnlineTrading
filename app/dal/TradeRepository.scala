@@ -62,7 +62,7 @@ class TradeRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implic
 
   def list(): Future[Seq[Trade]] = {
     db.run{
-      trades.sortBy(_.timestamp.desc).take(10).result
+      trades.sortBy(_.timestamp.desc).take(30).result
     }
   }
 
